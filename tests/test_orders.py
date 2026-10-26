@@ -140,6 +140,28 @@ async def test_get_orders_logs_in_and_returns_typed_orders(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    ("limit", "expected", "pages"),
+    [(21, 21, [("20", "0"), ("1", "20")]), (40, 23, [("20", "0"), ("20", "20")])],
+)
+async def test_limits_above_twenty_are_fetched_in_pages(
+    bilka: FakeBilka, limit: int, expected: int, pages: list[tuple[str, str]]
+) -> None:
+    bilka.orders = [synthetic_order(orderId=f"9000000001{n:02d}") for n in range(23)]
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        orders = await client.get_orders(limit=limit)
+
+    assert [o.order_number for o in orders] == [f"9000000001{n:02d}" for n in range(expected)]
+    assert [
+        (r.url.params["limit"], r.url.params["offset"]) for r in bilka.calls("order_history")
+    ] == pages
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     ("code", "status"),
     [
         ("Ubehandlet", OrderStatus.PROCESSING),

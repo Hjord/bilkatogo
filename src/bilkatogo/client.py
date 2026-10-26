@@ -11,6 +11,7 @@ from .const import (
     GIGYA_BASE_URL,
     GIGYA_INVALID_LOGIN_ID,
     JWT_LIFETIME_SECONDS,
+    ORDER_HISTORY_PAGE_SIZE,
     ORDER_HISTORY_PARAMS,
     WEB_PARAMS,
 )
@@ -77,11 +78,18 @@ class BilkaToGoClient:
         return jwt
 
     async def get_orders(self, limit: int = 5, offset: int = 0) -> list[Order]:
-        data = await self._shop_post(
-            "shop/v7/OrderHistory",
-            {"limit": limit, "offset": offset, **ORDER_HISTORY_PARAMS},
-        )
-        return [Order.from_dict(order) for order in data.get("orders") or []]
+        orders: list[Order] = []
+        while len(orders) < limit:
+            page_size = min(ORDER_HISTORY_PAGE_SIZE, limit - len(orders))
+            data = await self._shop_post(
+                "shop/v7/OrderHistory",
+                {"limit": page_size, "offset": offset + len(orders), **ORDER_HISTORY_PARAMS},
+            )
+            page = [Order.from_dict(order) for order in data.get("orders") or []]
+            orders.extend(page)
+            if len(page) < page_size:
+                break
+        return orders
 
     async def _shop_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._jwt or await self._restore_session() or await self._login()
