@@ -106,3 +106,90 @@ async def test_order_status_states_are_translated_in_danish_and_english(
         assert {key.removeprefix(prefix) for key in translations if key.startswith(prefix)} == {
             status.value for status in OrderStatus
         }
+
+
+def sensor_state(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> State:
+    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    return state
+
+
+async def test_pickup_slot_start_is_a_copenhagen_timestamp(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    await hass.config.async_set_time_zone("America/New_York")
+
+    entry = await setup_integration()
+
+    state = sensor_state(hass, entry, "pickup_slot")
+    assert state.state == "2026-11-03T15:00:00+00:00"
+    assert state.attributes["device_class"] == "timestamp"
+    assert state.attributes["pickup_slot_end"] == "2026-11-03T18:00:00+01:00"
+    assert state.attributes["order_number"] == "900000000002"
+    assert state.attributes["price"] == 456.0
+
+
+async def test_pickup_point_shows_the_current_orders_store(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    entry = await setup_integration()
+
+    state = sensor_state(hass, entry, "pickup_point")
+    assert state.state == "Bilka Eksempelby"
+    assert state.attributes["order_number"] == "900000000002"
+    assert state.attributes["price"] == 456.0
+
+
+async def test_pickup_code_shows_once_the_current_order_is_packed(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    freezer.move_to("2026-11-02 12:00:00+00:00")
+    entry = await setup_integration()
+    assert sensor_state(hass, entry, "pickup_code").state == STATE_UNKNOWN
+    assert bilka.calls("order_details") == []
+
+    bilka.orders[0] = {**bilka.orders[0], "status": "Pakket", "packedPrice": 44950}
+    freezer.tick(timedelta(minutes=60))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    state = sensor_state(hass, entry, "pickup_code")
+    assert state.state == "87654321"
+    assert state.attributes["order_number"] == "900000000002"
+    assert state.attributes["price"] == 449.5
+
+
+async def test_pickup_sensors_are_unknown_without_orders(
+    hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka
+) -> None:
+    bilka.orders = []
+
+    entry = await setup_integration()
+
+    for key in ("pickup_slot", "pickup_code", "pickup_point"):
+        state = sensor_state(hass, entry, key)
+        assert state.state == STATE_UNKNOWN
+        assert "order_number" not in state.attributes
+        assert "pickup_slot_end" not in state.attributes
+
+
+async def test_pickup_sensor_names_are_translated_in_danish_and_english(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    await setup_integration()
+    prefix = f"component.{DOMAIN}.entity.sensor."
+
+    da = await async_get_translations(hass, "da", "entity", [DOMAIN])
+    en = await async_get_translations(hass, "en", "entity", [DOMAIN])
+
+    assert da[f"{prefix}pickup_slot.name"] == "Afhentningstidspunkt"
+    assert da[f"{prefix}pickup_code.name"] == "Afhentningskode"
+    assert da[f"{prefix}pickup_point.name"] == "Afhentningssted"
+    assert en[f"{prefix}pickup_slot.name"] == "Pickup slot"
+    assert en[f"{prefix}pickup_code.name"] == "Pickup code"
+    assert en[f"{prefix}pickup_point.name"] == "Pickup point"

@@ -59,6 +59,42 @@
             "name": "Substitutions"
           }
         }
+      },
+      "pickup_slot": {
+        "name": "Pickup slot",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          },
+          "pickup_slot_end": {
+            "name": "Pickup slot end"
+          }
+        }
+      },
+      "pickup_code": {
+        "name": "Pickup code",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          }
+        }
+      },
+      "pickup_point": {
+        "name": "Pickup point",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          }
+        }
       }
     }
   },
