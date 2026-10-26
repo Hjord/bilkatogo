@@ -17,7 +17,6 @@ from .const import (
     WEB_PARAMS,
 )
 from .exceptions import (
-    BilkaToGoError,
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
@@ -71,7 +70,7 @@ class BilkaToGoClient:
             "POST", f"{API_BASE_URL}/auth/LoginJWT", params=WEB_PARAMS, headers={"jwt_token": jwt}
         )
         if response.status_code != 200:
-            raise BilkaToGoError(f"Shop login failed with HTTP {response.status_code}")
+            raise UnexpectedResponseError(f"Shop login failed with HTTP {response.status_code}")
         self._jwt = jwt
         self._jwt_expires_at = expires_at
         if self._token_storage is not None:
@@ -122,7 +121,7 @@ class BilkaToGoClient:
             return None
         if response.status_code != 200:
             raise UnexpectedResponseError(f"{path} failed with HTTP {response.status_code}")
-        data = response.json()
+        data = self._json(response, path)
         if "code" in data and "msg" in data:
             return None
         return data
@@ -161,7 +160,10 @@ class BilkaToGoClient:
                 "httpStatusCodes": "true",
             },
         )
-        return data["sessionInfo"]["cookieValue"]
+        try:
+            return data["sessionInfo"]["cookieValue"]
+        except KeyError, TypeError:
+            raise UnexpectedResponseError("Gigya login answered without a login token") from None
 
     async def _gigya_jwt(self, login_token: str) -> str:
         data = await self._gigya(
@@ -172,16 +174,21 @@ class BilkaToGoClient:
                 "expiration": str(JWT_LIFETIME_SECONDS),
             },
         )
-        return data["id_token"]
+        try:
+            return data["id_token"]
+        except KeyError:
+            raise UnexpectedResponseError("Gigya answered without a JWT") from None
 
     async def _gigya(self, method: str, form: dict[str, str]) -> dict[str, Any]:
         response = await self._request("POST", f"{GIGYA_BASE_URL}/{method}", data=form)
-        data = response.json()
+        data = self._json(response, f"Gigya {method}")
         error_code = data.get("errorCode", 0)
         if error_code == GIGYA_INVALID_LOGIN_ID:
             raise InvalidCredentialsError(data.get("errorMessage", "Invalid email or password"))
         if error_code != 0 or response.status_code != 200:
-            raise BilkaToGoError(f"Gigya {method} failed: {data.get('errorMessage', error_code)}")
+            raise UnexpectedResponseError(
+                f"Gigya {method} failed: {data.get('errorMessage', error_code)}"
+            )
         return data
 
     async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
@@ -189,3 +196,15 @@ class BilkaToGoClient:
             return await self._http.request(method, url, **kwargs)
         except httpx.TransportError as err:
             raise BilkaUnreachableError(f"Could not reach {httpx.URL(url).host}: {err}") from err
+
+    @staticmethod
+    def _json(response: httpx.Response, what: str) -> dict[str, Any]:
+        try:
+            data = response.json()
+        except ValueError:
+            raise UnexpectedResponseError(
+                f"{what} answered HTTP {response.status_code} without JSON"
+            ) from None
+        if not isinstance(data, dict):
+            raise UnexpectedResponseError(f"{what} answered JSON that is not an object")
+        return data

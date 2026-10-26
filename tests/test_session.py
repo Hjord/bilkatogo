@@ -113,3 +113,32 @@ async def test_connection_failures_raise_bilka_unreachable(
     ):
         with pytest.raises(BilkaUnreachableError):
             await client.get_orders()
+
+
+HTML_ERROR = "<html><body>Bad Gateway</body></html>"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("route", "response"),
+    [
+        ("order_history", httpx.Response(200, text=HTML_ERROR)),
+        ("order_history", httpx.Response(500, json={"error": "fake"})),
+        ("order_history", httpx.Response(200, json=["not", "an", "object"])),
+        ("gigya_login", httpx.Response(502, text=HTML_ERROR)),
+        ("gigya_login", httpx.Response(200, json={"errorCode": 0})),
+        ("gigya_jwt", httpx.Response(500, json={"errorCode": 500001, "errorMessage": "fake"})),
+        ("login_jwt", httpx.Response(500, text="Internal Server Error")),
+    ],
+)
+async def test_unexpected_answers_raise_unexpected_response(
+    bilka: FakeBilka, route: str, response: httpx.Response
+) -> None:
+    bilka.script(route, response)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        with pytest.raises(UnexpectedResponseError):
+            await client.get_orders()
