@@ -123,7 +123,10 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
-            'amount': 1200,
+            'amount': dict({
+              '__type': "<class 'decimal.Decimal'>",
+              'repr': "Decimal('12.00')",
+            }),
             'category': 'Frugt & grønt',
             'name': 'Æbler',
             'product_id': 1001,
@@ -146,7 +149,10 @@
               'tagline': None,
               'unavailable_reason': '',
             }),
-            'amount': 2500,
+            'amount': dict({
+              '__type': "<class 'decimal.Decimal'>",
+              'repr': "Decimal('25.00')",
+            }),
             'category': 'Frugt & grønt',
             'name': 'Rugbrød',
             'product_id': 1003,
@@ -177,7 +183,10 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
-            'amount': 1100,
+            'amount': dict({
+              '__type': "<class 'decimal.Decimal'>",
+              'repr': "Decimal('11.00')",
+            }),
             'category': 'Mejeri',
             'name': 'Letmælk',
             'product_id': 1004,
@@ -223,7 +232,10 @@
             'isoformat': '12:00:00',
           }),
         }),
-        'price': 50900,
+        'price': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('509.00')",
+        }),
         'status': 'packed',
         'status_code': 'Pakket',
         'substitutions': list([
@@ -315,8 +327,14 @@
         'home_delivery': False,
         'order_number': '900000000001',
         'ordered_at': '2026-10-26T18:30:00',
-        'ordered_price': 51200,
-        'packed_price': 50900,
+        'ordered_price': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('512.00')",
+        }),
+        'packed_price': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('509.00')",
+        }),
         'pickup_point': dict({
           '_raw': dict({
             'address': '**REDACTED**',

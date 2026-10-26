@@ -1,5 +1,6 @@
 import logging
 from datetime import date, time
+from decimal import Decimal
 
 import pytest
 
@@ -35,7 +36,7 @@ async def test_get_order_fetches_one_order_with_pickup_code(bilka: FakeBilka) ->
     assert details.home_delivery is False
     assert details.pickup_code is not None
     assert details.pickup_code.code == "12345678"
-    assert details.price == 50900
+    assert str(details.price) == "509.00"
 
 
 @pytest.mark.asyncio
@@ -43,9 +44,9 @@ async def test_order_lines_are_flattened_across_categories(bilka: FakeBilka) -> 
     details = await fetch(bilka, "900000000001")
 
     assert [(line.category, line.name, line.quantity, line.amount) for line in details.lines] == [
-        ("Frugt & grønt", "Æbler", 4, 1200),
-        ("Frugt & grønt", "Rugbrød", 1, 2500),
-        ("Mejeri", "Letmælk", 2, 1100),
+        ("Frugt & grønt", "Æbler", 4, Decimal("12.00")),
+        ("Frugt & grønt", "Rugbrød", 1, Decimal("25.00")),
+        ("Mejeri", "Letmælk", 2, Decimal("11.00")),
     ]
     assert details.lines[1].product_id == 1003
     assert details.lines[1].substituted is False

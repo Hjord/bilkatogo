@@ -4,6 +4,7 @@ import json
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Annotated, Any
 
 import httpx
@@ -61,6 +62,8 @@ def to_json(data: Any) -> str:
             return dict(obj)
         if isinstance(obj, datetime | date | time):
             return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return str(obj)
         raise TypeError(f"Cannot serialise {type(obj).__name__}")
 
     return json.dumps(data, default=default, ensure_ascii=False)

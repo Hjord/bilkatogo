@@ -183,8 +183,8 @@ def test_orders_json_output(invoke) -> None:
         },
         "home_delivery": False,
         "delivered": False,
-        "ordered_price": 45600,
-        "packed_price": 0,
+        "ordered_price": "456.00",
+        "packed_price": "0.00",
         "content": "Æbler, Havregryn, Letmælk",
     }
     assert collected["status"] == "picked_up"
@@ -306,7 +306,7 @@ def test_order_json_output(invoke) -> None:
         "product_id": 1003,
         "name": "Rugbrød",
         "quantity": 1,
-        "amount": 2500,
+        "amount": "25.00",
         "substituted": False,
         "unavailable_reason": "",
     }

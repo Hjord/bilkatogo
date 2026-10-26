@@ -1,8 +1,10 @@
 import logging
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from .base import BilkaDataClass
+from .money import kroner
 from .order import OrderStatus, PickupPoint, PickupSlot
 
 
@@ -53,7 +55,7 @@ class OrderLine(BilkaDataClass):
     product_id: int | None
     name: str
     quantity: int
-    amount: int
+    amount: Decimal
     substituted: bool
     unavailable_reason: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
@@ -67,7 +69,7 @@ class OrderLine(BilkaDataClass):
             product_id=int(product_id) if product_id is not None else None,
             name=_product_name(data),
             quantity=int(data.get("quantity") or 0),
-            amount=int(data.get("amount") or 0),
+            amount=kroner(data.get("amount")),
             substituted=Substitution.from_dict(data) is not None,
             unavailable_reason=data.get("unavailable_reason") or "",
         )
@@ -82,7 +84,7 @@ class OrderDetails(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     pickup_code: PickupCode | None
-    price: int
+    price: Decimal
     lines: list[OrderLine]
     substitutions: list[Substitution]
     _raw: dict[str, Any] | None = field(default=None, repr=False)
@@ -116,7 +118,7 @@ class OrderDetails(BilkaDataClass):
             pickup_point=PickupPoint.from_dict(address) if address else None,
             home_delivery=bool((address or {}).get("home_delivery", False)),
             pickup_code=PickupCode.from_dict(address or {}),
-            price=int(data.get("price") or 0),
+            price=kroner(data.get("price")),
             lines=lines,
             substitutions=[
                 substitution

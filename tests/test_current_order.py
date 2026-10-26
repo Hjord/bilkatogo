@@ -136,4 +136,4 @@ async def test_current_order_carries_the_summary(bilka: FakeBilka) -> None:
     assert (details.pickup_slot.date, details.pickup_slot.start) == (date(2026, 11, 3), time(16))
     assert details.pickup_point is not None
     assert details.pickup_point.name == "Bilka Eksempelby"
-    assert details.price == 45600
+    assert str(details.price) == "456.00"

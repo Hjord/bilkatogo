@@ -1,11 +1,13 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
 from ..const import BILKA_TIME_ZONE
 from .base import BilkaDataClass
+from .money import kroner
 
 
 class OrderStatus(StrEnum):
@@ -94,8 +96,8 @@ class Order(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     delivered: bool
-    ordered_price: int
-    packed_price: int
+    ordered_price: Decimal
+    packed_price: Decimal
     content: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
@@ -113,8 +115,8 @@ class Order(BilkaDataClass):
             pickup_point=PickupPoint.from_dict(pickupzone) if pickupzone else None,
             home_delivery=bool((pickupzone or {}).get("home_delivery", False)),
             delivered=bool(data.get("delivered", False)),
-            ordered_price=int(data.get("orderedPrice") or 0),
-            packed_price=int(data.get("packedPrice") or 0),
+            ordered_price=kroner(data.get("orderedPrice")),
+            packed_price=kroner(data.get("packedPrice")),
             content=data.get("content") or "",
         )
 
