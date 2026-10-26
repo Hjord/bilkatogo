@@ -7,6 +7,7 @@ authors = [
     { name = "Nick Nissen", email = "nickknissen@gmail.com" }
 ]
 license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["bilka", "bilkatogo", "danish", "groceries", "api", "async"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
