@@ -103,16 +103,24 @@ class BilkaToGoClient:
                 break
         return orders
 
-    async def get_order(self, order_number: str) -> OrderDetails:
+    async def get_order(self, order: str | Order) -> OrderDetails:
+        order_number = order if isinstance(order, str) else order.order_number
         data = await self._shop("GET", "shop/v7/OrderDetails", {"orderId": order_number})
-        order = data.get("order")
-        if not order:
+        details = data.get("order")
+        if not details:
             raise BilkaToGoError(f"Order {order_number} was not found")
-        return OrderDetails.from_dict(order)
+        summary = await self._find_order(order_number) if isinstance(order, str) else order
+        return OrderDetails.from_dict(
+            details, ordered_total=summary.ordered_price if summary else None
+        )
 
     async def get_current_order(self) -> OrderDetails | None:
         order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
-        return await self.get_order(order.order_number) if order else None
+        return await self.get_order(order) if order else None
+
+    async def _find_order(self, order_number: str) -> Order | None:
+        orders = await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT)
+        return next((order for order in orders if order.order_number == order_number), None)
 
     async def get_pickup_points(self) -> list[PickupPoint]:
         data = await self._shop("GET", "shop/v6/AvailableDeliveryAddresses", {"orderByZipcode": 1})

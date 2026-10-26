@@ -1,9 +1,11 @@
 import json
 import logging
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from .base import BilkaDataClass
+from .money import kroner
 from .order import OrderStatus, PickupPoint, PickupSlot
 
 
@@ -23,6 +25,7 @@ class PickupCode(BilkaDataClass):
 _LOGGER = logging.getLogger(__name__)
 
 SUBSTITUTED_TAGLINE = "erstattet"
+DISCOUNT_KEYS = ("promo", "membership_offer_discount", "personalized_offer_discount")
 
 
 @dataclass
@@ -79,7 +82,7 @@ class OrderLine(BilkaDataClass):
     product_id: int | None
     name: str
     quantity: int
-    amount: int
+    amount: Decimal
     substituted: bool
     unavailable_reason: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
@@ -93,7 +96,7 @@ class OrderLine(BilkaDataClass):
             product_id=int(product_id) if product_id is not None else None,
             name=_product_name(data),
             quantity=int(data.get("quantity") or 0),
-            amount=int(data.get("amount") or 0),
+            amount=kroner(data.get("amount")),
             substituted=Substitution.from_dict(data) is not None,
             unavailable_reason=data.get("unavailable_reason") or "",
         )
@@ -108,16 +111,23 @@ class OrderDetails(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     pickup_code: PickupCode | None
-    price: int
+    price: Decimal
+    ordered_total: Decimal | None
+    deposit: Decimal
+    service_fee: Decimal
+    packaging: Decimal
+    delivery_fee: Decimal
+    discount: Decimal
     lines: list[OrderLine]
     substitutions: list[Substitution]
     missing_items: list[MissingItem]
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> OrderDetails:
+    def from_dict(cls, data: dict[str, Any], ordered_total: Decimal | None = None) -> OrderDetails:
         status_code = data.get("status") or ""
         address = data.get("deliveryAddress")
+        stat = data.get("stat") or {}
         raw_lines = [
             (group.get("headline") or "", line)
             for group in data.get("lines") or []
@@ -144,7 +154,16 @@ class OrderDetails(BilkaDataClass):
             pickup_point=PickupPoint.from_dict(address) if address else None,
             home_delivery=bool((address or {}).get("home_delivery", False)),
             pickup_code=PickupCode.from_dict(address or {}),
-            price=int(data.get("price") or 0),
+            price=kroner(data.get("price")),
+            ordered_total=ordered_total,
+            deposit=kroner(stat.get("deposit")),
+            service_fee=kroner(stat.get("packing")),
+            packaging=kroner(stat.get("packaging_price")),
+            delivery_fee=kroner(stat.get("delivery_price")),
+            discount=kroner(
+                sum(int(stat.get(key) or 0) for key in DISCOUNT_KEYS)
+                + sum(int(voucher.get("amount") or 0) for voucher in stat.get("vouchers") or [])
+            ),
             lines=lines,
             substitutions=[
                 substitution

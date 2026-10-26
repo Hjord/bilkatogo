@@ -164,6 +164,7 @@ async def test_pickup_code_shows_once_the_current_order_is_packed(
     assert state.state == "87654321"
     assert state.attributes["order_number"] == "900000000002"
     assert state.attributes["price"] == 449.5
+    assert type(state.attributes["price"]) is float
 
 
 async def test_pickup_sensors_are_unknown_without_orders(

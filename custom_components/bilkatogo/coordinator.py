@@ -101,7 +101,7 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         if order.status is OrderStatus.PICKED_UP:
             if previous and previous.order_number == order.order_number:
                 return previous
-            return await self.client.get_order(order.order_number)
+            return await self.client.get_order(order)
         if order.status in DETAILS_STATUSES:
-            return await self.client.get_order(order.order_number)
+            return await self.client.get_order(order)
         return None

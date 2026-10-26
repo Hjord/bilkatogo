@@ -105,7 +105,11 @@ asyncio.run(main())
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
 - `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
-- Prices are in øre.
+- Amounts are `Decimal` kroner.
+- `OrderDetails.price` is the Order Total, broken down into `deposit`, `service_fee`,
+  `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
+  placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
+  Pass an `Order` to `get_order` instead of its number to skip that lookup.
 
 ## Home Assistant
 
