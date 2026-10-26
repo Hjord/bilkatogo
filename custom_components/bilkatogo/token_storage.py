@@ -11,8 +11,6 @@ STORAGE_VERSION = 1
 
 
 class HomeAssistantTokenStorage(TokenStorage):
-    """Keeps the Bilka session of one config entry in Home Assistant's storage."""
-
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}.session", private=True

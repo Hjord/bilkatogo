@@ -11,8 +11,6 @@ STORAGE_VERSION = 1
 
 
 class SubstitutionAnnouncer:
-    """Fires one event per new Substitution and remembers what was announced across restarts."""
-
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
         self._hass = hass
         self._store: Store[dict[str, Any]] = Store(

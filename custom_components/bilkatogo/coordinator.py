@@ -50,8 +50,6 @@ class BilkaToGoData:
 
 
 class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
-    """Fetches the Order list once per update and keeps the Current Order."""
-
     config_entry: BilkaToGoConfigEntry
 
     def __init__(
