@@ -1,7 +1,6 @@
 {
   "domain": "bilkatogo",
   "name": "BilkaToGo",
-  "categories": ["productivity_information.shopping_groceries"],
   "codeowners": ["@nickknissen"],
   "config_flow": true,
   "documentation": "https://github.com/nickknissen/bilkatogo",
