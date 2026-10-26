@@ -1,9 +1,12 @@
+from importlib.util import find_spec
 from typing import Any
 
 import pytest
 
 from bilkatogo import TokenStorage
 from tests.fake_bilka import FakeBilka
+
+collect_ignore = [] if find_spec("homeassistant") else ["ha"]
 
 
 class MemoryTokenStorage(TokenStorage):
