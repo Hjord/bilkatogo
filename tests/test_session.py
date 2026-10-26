@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
-from bilkatogo import BilkaToGoClient, UnexpectedResponseError
+from bilkatogo import BilkaToGoClient, BilkaUnreachableError, UnexpectedResponseError
 from tests.conftest import MemoryTokenStorage
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
@@ -90,3 +90,26 @@ async def test_stored_session_about_to_expire_is_renewed_before_the_shop_call(
     assert len(bilka.calls("gigya_login")) == 2
     assert len(bilka.calls("order_history")) == 1
     assert datetime.fromisoformat(storage.data["jwt_expires_at"]) > soon + timedelta(hours=23)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("route", "failure"),
+    [
+        ("order_history", httpx.ConnectError("fake: connection refused")),
+        ("order_history", httpx.ReadTimeout("fake: read timed out")),
+        ("gigya_login", httpx.ConnectTimeout("fake: connect timed out")),
+        ("login_jwt", httpx.ConnectError("fake: connection reset")),
+    ],
+)
+async def test_connection_failures_raise_bilka_unreachable(
+    bilka: FakeBilka, route: str, failure: Exception
+) -> None:
+    bilka.script(route, failure)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        with pytest.raises(BilkaUnreachableError):
+            await client.get_orders()

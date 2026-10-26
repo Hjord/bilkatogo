@@ -16,7 +16,12 @@ from .const import (
     ORDER_HISTORY_PARAMS,
     WEB_PARAMS,
 )
-from .exceptions import BilkaToGoError, InvalidCredentialsError, UnexpectedResponseError
+from .exceptions import (
+    BilkaToGoError,
+    BilkaUnreachableError,
+    InvalidCredentialsError,
+    UnexpectedResponseError,
+)
 from .models import Order
 from .token_storage import TokenStorage
 
@@ -62,8 +67,8 @@ class BilkaToGoClient:
         login_token = await self._gigya_login(self._password)
         jwt = await self._gigya_jwt(login_token)
         expires_at = datetime.now(UTC) + timedelta(seconds=JWT_LIFETIME_SECONDS)
-        response = await self._http.post(
-            f"{API_BASE_URL}/auth/LoginJWT", params=WEB_PARAMS, headers={"jwt_token": jwt}
+        response = await self._request(
+            "POST", f"{API_BASE_URL}/auth/LoginJWT", params=WEB_PARAMS, headers={"jwt_token": jwt}
         )
         if response.status_code != 200:
             raise BilkaToGoError(f"Shop login failed with HTTP {response.status_code}")
@@ -107,7 +112,7 @@ class BilkaToGoClient:
     async def _shop_request(
         self, method: str, path: str, params: dict[str, Any], jwt: str
     ) -> dict[str, Any] | None:
-        response = await self._http.request(
+        response = await self._request(
             method,
             f"{API_BASE_URL}/{path}",
             params={**WEB_PARAMS, **params},
@@ -170,7 +175,7 @@ class BilkaToGoClient:
         return data["id_token"]
 
     async def _gigya(self, method: str, form: dict[str, str]) -> dict[str, Any]:
-        response = await self._http.post(f"{GIGYA_BASE_URL}/{method}", data=form)
+        response = await self._request("POST", f"{GIGYA_BASE_URL}/{method}", data=form)
         data = response.json()
         error_code = data.get("errorCode", 0)
         if error_code == GIGYA_INVALID_LOGIN_ID:
@@ -178,3 +183,9 @@ class BilkaToGoClient:
         if error_code != 0 or response.status_code != 200:
             raise BilkaToGoError(f"Gigya {method} failed: {data.get('errorMessage', error_code)}")
         return data
+
+    async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        try:
+            return await self._http.request(method, url, **kwargs)
+        except httpx.TransportError as err:
+            raise BilkaUnreachableError(f"Could not reach {httpx.URL(url).host}: {err}") from err
