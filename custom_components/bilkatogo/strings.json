@@ -60,14 +60,51 @@
           }
         }
       },
+      "missing_items": {
+        "name": "Missing items",
+        "state_attributes": {
+          "missing_items": {
+            "name": "Missing items"
+          }
+        }
+      },
+      "order_total": {
+        "name": "Order total",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "ordered_total": {
+            "name": "Ordered total"
+          },
+          "difference": {
+            "name": "Difference from ordered total"
+          },
+          "deposit": {
+            "name": "Deposit"
+          },
+          "service_fee": {
+            "name": "Service fee"
+          },
+          "packaging": {
+            "name": "Packaging"
+          },
+          "delivery_fee": {
+            "name": "Delivery fee"
+          },
+          "discount": {
+            "name": "Discount"
+          }
+        }
+      },
       "pickup_slot": {
         "name": "Pickup slot",
         "state_attributes": {
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           },
           "pickup_slot_end": {
             "name": "Pickup slot end"
@@ -80,8 +117,8 @@
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           }
         }
       },
@@ -91,8 +128,8 @@
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           }
         }
       }

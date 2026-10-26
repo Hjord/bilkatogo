@@ -1,8 +1,11 @@
+import json
 import logging
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from .base import BilkaDataClass
+from .money import kroner
 from .order import OrderStatus, PickupPoint, PickupSlot
 
 
@@ -22,6 +25,7 @@ class PickupCode(BilkaDataClass):
 _LOGGER = logging.getLogger(__name__)
 
 SUBSTITUTED_TAGLINE = "erstattet"
+DISCOUNT_KEYS = ("promo", "membership_offer_discount", "personalized_offer_discount")
 
 
 @dataclass
@@ -48,12 +52,37 @@ class Substitution(BilkaDataClass):
 
 
 @dataclass
+class MissingItem(BilkaDataClass):
+    product: str
+    article_number: str
+    ordered_quantity: int
+    missing_quantity: int
+    _raw: dict[str, Any] | None = field(default=None, repr=False)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> MissingItem | None:
+        if not data.get("unavailable_reason") or data.get("replacement") or data.get("children"):
+            return None
+        if Substitution.from_dict(data) is not None:
+            return None
+        ordered = int(data.get("quantity") or 0)
+        missing = _quantity(data.get("unavailable_quantity"))
+        return cls(
+            _raw=data,
+            product=_product_name(data),
+            article_number=str((data.get("product") or {}).get("objectID") or ""),
+            ordered_quantity=ordered,
+            missing_quantity=missing if 0 < missing < ordered else ordered,
+        )
+
+
+@dataclass
 class OrderLine(BilkaDataClass):
     category: str
     product_id: int | None
     name: str
     quantity: int
-    amount: int
+    amount: Decimal
     substituted: bool
     unavailable_reason: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
@@ -67,7 +96,7 @@ class OrderLine(BilkaDataClass):
             product_id=int(product_id) if product_id is not None else None,
             name=_product_name(data),
             quantity=int(data.get("quantity") or 0),
-            amount=int(data.get("amount") or 0),
+            amount=kroner(data.get("amount")),
             substituted=Substitution.from_dict(data) is not None,
             unavailable_reason=data.get("unavailable_reason") or "",
         )
@@ -82,15 +111,23 @@ class OrderDetails(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     pickup_code: PickupCode | None
-    price: int
+    order_total: Decimal
+    ordered_total: Decimal | None
+    deposit: Decimal
+    service_fee: Decimal
+    packaging: Decimal
+    delivery_fee: Decimal
+    discount: Decimal
     lines: list[OrderLine]
     substitutions: list[Substitution]
+    missing_items: list[MissingItem]
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> OrderDetails:
+    def from_dict(cls, data: dict[str, Any], ordered_total: Decimal | None = None) -> OrderDetails:
         status_code = data.get("status") or ""
         address = data.get("deliveryAddress")
+        stat = data.get("stat") or {}
         raw_lines = [
             (group.get("headline") or "", line)
             for group in data.get("lines") or []
@@ -102,10 +139,11 @@ class OrderDetails(BilkaDataClass):
         for line in lines:
             if line.unavailable_reason and not line.substituted:
                 _LOGGER.warning(
-                    "Order %s: %s is unavailable (%s) and not substituted",
+                    "Order %s: %s is unavailable (%s) and not substituted: %s",
                     order_number,
                     line.name,
                     line.unavailable_reason,
+                    json.dumps(line._raw, ensure_ascii=False, default=str),
                 )
         return cls(
             _raw=data,
@@ -113,18 +151,37 @@ class OrderDetails(BilkaDataClass):
             status=OrderStatus.from_code(status_code),
             status_code=status_code,
             pickup_slot=PickupSlot.from_dict(data),
-            pickup_point=PickupPoint.from_dict(address) if address else None,
+            pickup_point=PickupPoint.from_order(address) if address else None,
             home_delivery=bool((address or {}).get("home_delivery", False)),
             pickup_code=PickupCode.from_dict(address or {}),
-            price=int(data.get("price") or 0),
+            order_total=kroner(data.get("price")),
+            ordered_total=ordered_total,
+            deposit=kroner(stat.get("deposit")),
+            service_fee=kroner(stat.get("packing")),
+            packaging=kroner(stat.get("packaging_price")),
+            delivery_fee=kroner(stat.get("delivery_price")),
+            discount=kroner(
+                sum(int(stat.get(key) or 0) for key in DISCOUNT_KEYS)
+                + sum(int(voucher.get("amount") or 0) for voucher in stat.get("vouchers") or [])
+            ),
             lines=lines,
             substitutions=[
                 substitution
                 for _, line in raw_lines
                 if (substitution := Substitution.from_dict(line)) is not None
             ],
+            missing_items=[
+                item for _, line in raw_lines if (item := MissingItem.from_dict(line)) is not None
+            ],
         )
 
 
 def _product_name(data: dict[str, Any]) -> str:
     return (data.get("product") or {}).get("name") or ""
+
+
+def _quantity(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except TypeError, ValueError:
+        return 0

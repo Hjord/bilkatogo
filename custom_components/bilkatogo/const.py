@@ -7,8 +7,10 @@ LOGGER = getLogger(__package__)
 
 DOMAIN = "bilkatogo"
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+CURRENCY = "DKK"
 
 EVENT_SUBSTITUTION = f"{DOMAIN}_substitution"
+EVENT_MISSING_ITEM = f"{DOMAIN}_missing_item"
 
 UPDATE_INTERVAL = timedelta(minutes=60)
 FAST_UPDATE_INTERVAL = timedelta(minutes=5)

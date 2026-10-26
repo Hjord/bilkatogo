@@ -130,7 +130,7 @@ async def test_pickup_slot_start_is_a_copenhagen_timestamp(
     assert state.attributes["device_class"] == "timestamp"
     assert state.attributes["pickup_slot_end"] == "2026-11-03T18:00:00+01:00"
     assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["price"] == 456.0
+    assert state.attributes["order_total"] == 456.0
 
 
 async def test_pickup_point_shows_the_current_orders_store(
@@ -141,7 +141,7 @@ async def test_pickup_point_shows_the_current_orders_store(
     state = sensor_state(hass, entry, "pickup_point")
     assert state.state == "Bilka Eksempelby"
     assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["price"] == 456.0
+    assert state.attributes["order_total"] == 456.0
 
 
 async def test_pickup_code_shows_once_the_current_order_is_packed(
@@ -163,7 +163,8 @@ async def test_pickup_code_shows_once_the_current_order_is_packed(
     state = sensor_state(hass, entry, "pickup_code")
     assert state.state == "87654321"
     assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["price"] == 449.5
+    assert state.attributes["order_total"] == 449.5
+    assert type(state.attributes["order_total"]) is float
 
 
 async def test_pickup_sensors_are_unknown_without_orders(

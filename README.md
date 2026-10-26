@@ -42,6 +42,9 @@ bilkatogo login                 # log in and store the session
 bilkatogo orders --limit 10     # list your most recent orders
 bilkatogo order                 # show the Current Order with its details
 bilkatogo order 900000000001    # show one order by Order Number
+bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
+bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
+bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
 ```
 
 Every command accepts `--json` for machine-readable output.
@@ -104,7 +107,11 @@ asyncio.run(main())
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
 - `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
-- Prices are in øre.
+- Amounts are `Decimal` kroner.
+- `OrderDetails.order_total` is the Order Total, broken down into `deposit`, `service_fee`,
+  `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
+  placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
+  Pass an `Order` to `get_order` instead of its number to skip that lookup.
 
 ## Home Assistant
 
@@ -126,11 +133,15 @@ All entities describe the Current Order.
 |---|---|---|
 | Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code |
 | Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
-| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, price (DKK), Pickup Slot end |
-| Pickup Code | The code you enter at check-in | Order Number, price (DKK) |
-| Pickup Point | The Bilka store you pick up from | Order Number, price (DKK) |
+| Missing Items | Number of products packed short without a replacement | List of Product, Article Number, ordered and missing quantity |
+| Order Total | What you pay for the order now (DKK) | Order Number, Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
+| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, Order Total (DKK), Pickup Slot end |
+| Pickup Code | The code you enter at check-in | Order Number, Order Total (DKK) |
+| Pickup Point | The Bilka store you pick up from | Order Number, Order Total (DKK) |
 
-Substitutions and the Pickup Code are fetched once the order is packed.
+Substitutions, Missing Items, the Pickup Code and the Order Total breakdown (Deposit, Service
+Fee, Packaging, Delivery Fee, Discount) are fetched once the order is packed. Before that the
+Order Total is Bilka's estimate from the order history.
 
 An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
 not know yet; the code is in the attribute. Without any order the entities have no state.
@@ -162,6 +173,35 @@ automation:
             {{ trigger.event.data.original_product }} was replaced by
             {{ trigger.event.data.replacement_product }}
             ({{ trigger.event.data.quantity }}).
+```
+
+### Event `bilkatogo_missing_item`
+
+Fired once for every new Missing Item, with this data:
+
+| Field | Example |
+|---|---|
+| `order_number` | `900000000003` |
+| `product` | `Skyr` |
+| `article_number` | `932058` |
+| `ordered_quantity` | `4` |
+| `missing_quantity` | `2` |
+
+Missing Items that already fired are remembered across restarts and reloads. An automation
+that sends a notification:
+
+```yaml
+automation:
+  - alias: BilkaToGo missing item
+    triggers:
+      - trigger: event
+        event_type: bilkatogo_missing_item
+    actions:
+      - action: notify.notify
+        data:
+          message: >
+            {{ trigger.event.data.product }}: {{ trigger.event.data.missing_quantity }}
+            of {{ trigger.event.data.ordered_quantity }} missing.
 ```
 
 ## Development

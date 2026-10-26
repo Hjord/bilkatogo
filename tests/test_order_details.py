@@ -1,5 +1,7 @@
+import json
 import logging
 from datetime import date, time
+from decimal import Decimal
 
 import pytest
 
@@ -35,7 +37,7 @@ async def test_get_order_fetches_one_order_with_pickup_code(bilka: FakeBilka) ->
     assert details.home_delivery is False
     assert details.pickup_code is not None
     assert details.pickup_code.code == "12345678"
-    assert details.price == 50900
+    assert str(details.order_total) == "509.00"
 
 
 @pytest.mark.asyncio
@@ -43,9 +45,9 @@ async def test_order_lines_are_flattened_across_categories(bilka: FakeBilka) -> 
     details = await fetch(bilka, "900000000001")
 
     assert [(line.category, line.name, line.quantity, line.amount) for line in details.lines] == [
-        ("Frugt & grønt", "Æbler", 4, 1200),
-        ("Frugt & grønt", "Rugbrød", 1, 2500),
-        ("Mejeri", "Letmælk", 2, 1100),
+        ("Frugt & grønt", "Æbler", 4, Decimal("12.00")),
+        ("Frugt & grønt", "Rugbrød", 1, Decimal("25.00")),
+        ("Mejeri", "Letmælk", 2, Decimal("11.00")),
     ]
     assert details.lines[1].product_id == 1003
     assert details.lines[1].substituted is False
@@ -97,6 +99,8 @@ async def test_unavailable_line_that_is_not_a_substitution_is_logged(
     assert record.levelno == logging.WARNING
     assert "Havregryn" in record.getMessage()
     assert "900000000002" in record.getMessage()
+    raw_line = orderlines(bilka, "900000000002")[1]
+    assert json.dumps(raw_line, ensure_ascii=False) in record.getMessage()
     assert details.lines[1].unavailable_reason == "Udsolgt"
     assert details.substitutions == []
 
@@ -112,6 +116,61 @@ async def test_unavailable_reason_on_a_substitution_is_not_logged(
 
     assert caplog.records == []
     assert len(details.substitutions) == 2
+
+
+@pytest.mark.asyncio
+async def test_missing_item_with_its_whole_quantity_missing(bilka: FakeBilka) -> None:
+    details = await fetch(bilka, "900000000003")
+
+    havregryn = next(item for item in details.missing_items if item.product == "Havregryn")
+    assert (
+        havregryn.article_number,
+        havregryn.ordered_quantity,
+        havregryn.missing_quantity,
+    ) == ("1006", 1, 1)
+
+
+@pytest.mark.asyncio
+async def test_missing_item_packed_short(bilka: FakeBilka) -> None:
+    details = await fetch(bilka, "900000000003")
+
+    skyr = next(item for item in details.missing_items if item.product == "Skyr")
+    assert (skyr.article_number, skyr.ordered_quantity, skyr.missing_quantity) == ("932058", 4, 2)
+
+
+@pytest.mark.asyncio
+async def test_a_substitution_is_not_a_missing_item(bilka: FakeBilka) -> None:
+    details = await fetch(bilka, "900000000003")
+
+    assert [item.product for item in details.missing_items] == ["Skyr", "Havregryn"]
+    assert [s.original_product for s in details.substitutions] == ["Letmælk"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "odd",
+    [
+        {"unavailable_reason": {"code": "OOS"}},
+        {"unavailable_reason": "Ukendt årsag", "quantity": None},
+        {"unavailable_quantity": "to"},
+        {"unavailable_quantity": None, "product": None},
+    ],
+)
+async def test_odd_unavailable_lines_do_not_break_parsing(bilka: FakeBilka, odd: dict) -> None:
+    orderlines(bilka, "900000000003")[2].update(odd)
+
+    details = await fetch(bilka, "900000000003")
+
+    assert [item.product for item in details.missing_items][0] == "Skyr"
+    assert len(details.missing_items) == 2
+    assert len(details.lines) == 4
+
+
+@pytest.mark.asyncio
+async def test_order_without_unavailable_lines_has_no_missing_items(bilka: FakeBilka) -> None:
+    details = await fetch(bilka, "900000000001")
+
+    assert details.missing_items == []
 
 
 @pytest.mark.asyncio

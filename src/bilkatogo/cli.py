@@ -4,6 +4,7 @@ import json
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Annotated, Any
 
 import httpx
@@ -11,13 +12,14 @@ import typer
 
 from . import config
 from .client import BilkaToGoClient
+from .const import SEARCH_LIMIT
 from .exceptions import (
     BilkaToGoError,
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import BilkaDataClass, Order, OrderStatus, PickupPoint, PickupSlot
+from .models import BilkaDataClass, Offer, Order, OrderStatus, PickupPoint, PickupSlot, Product
 from .token_storage import FileTokenStorage
 
 app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
@@ -61,6 +63,8 @@ def to_json(data: Any) -> str:
             return dict(obj)
         if isinstance(obj, datetime | date | time):
             return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return str(obj)
         raise TypeError(f"Cannot serialise {type(obj).__name__}")
 
     return json.dumps(data, default=default, ensure_ascii=False)
@@ -207,6 +211,10 @@ def format_point(point: PickupPoint | None, home_delivery: bool) -> str:
     return "Home Delivery" if home_delivery else (point.name if point else "")
 
 
+def format_amount(amount: Decimal | None) -> str:
+    return "" if amount is None else f"{amount:.2f} kr"
+
+
 def format_status(status: OrderStatus) -> str:
     return status.name.replace("_", " ").title()
 
@@ -226,7 +234,7 @@ async def order(
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Show one Order, or the Current Order, with its Pickup Code and Substitutions."""
+    """Show an Order (default: the Current Order), its Order Total and what packing changed."""
     if order_number is None:
         details = await with_session(
             ctx, email, password, lambda client: client.get_current_order(), "the current order"
@@ -251,18 +259,139 @@ async def order(
         ("Pickup Slot", format_slot(details.pickup_slot)),
         ("Pickup Point", format_point(details.pickup_point, details.home_delivery)),
         ("Pickup Code", details.pickup_code.code if details.pickup_code else ""),
+        ("Ordered Total", format_amount(details.ordered_total)),
+        ("Order Total", format_amount(details.order_total)),
+        ("Deposit", format_amount(details.deposit)),
+        ("Service Fee", format_amount(details.service_fee)),
+        ("Packaging", format_amount(details.packaging)),
+        ("Delivery Fee", format_amount(details.delivery_fee)),
+        ("Discount", format_amount(details.discount)),
     ]
     for label, value in fields:
         typer.echo(f"{label:<13} {value}")
-    if not details.substitutions:
-        typer.echo("Substitutions none")
-        return
-    typer.echo("Substitutions")
-    for substitution in details.substitutions:
-        typer.echo(
-            f"  {substitution.original_product} -> "
+    print_list(
+        "Substitutions",
+        [
+            f"{substitution.original_product} -> "
             f"{substitution.quantity} x {substitution.replacement_product}"
+            for substitution in details.substitutions
+        ],
+    )
+    print_list(
+        "Missing Items",
+        [
+            f"{item.product}: {item.missing_quantity} of {item.ordered_quantity} missing"
+            for item in details.missing_items
+        ],
+    )
+
+
+def print_list(label: str, entries: list[str]) -> None:
+    if not entries:
+        typer.echo(f"{label} none")
+        return
+    typer.echo(label)
+    for entry in entries:
+        typer.echo(f"  {entry}")
+
+
+@app.command("pickup-points")
+@run_async
+async def pickup_points(
+    ctx: typer.Context,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show every Pickup Point with its Store, marking the one chosen in your Cart."""
+
+    async def fetch(client: BilkaToGoClient) -> tuple[list[PickupPoint], PickupPoint | None]:
+        return await client.get_pickup_points(), await client.get_cart_pickup_point()
+
+    points, chosen = await with_session(ctx, email, password, fetch, "pickup points")
+    chosen_name = chosen.name if chosen else None
+    if as_json:
+        typer.echo(
+            to_json([{**dict(point), "chosen": point.name == chosen_name} for point in points])
         )
+        return
+    print_table(
+        ["", "Pickup Point", "Address", "Store"],
+        [
+            [
+                "*" if point.name == chosen_name else "",
+                point.name,
+                f"{point.address}, {point.zip_code} {point.city}",
+                point.store_id or "",
+            ]
+            for point in points
+        ],
+    )
+
+
+SearchTextArgument = Annotated[str, typer.Argument(help="What to search for, e.g. skyr.")]
+PickupPointOption = Annotated[
+    str | None,
+    typer.Option(
+        "--pickup-point",
+        help="Search at this Pickup Point's Store. Defaults to the Pickup Point in your Cart.",
+    ),
+]
+SearchLimitOption = Annotated[
+    int, typer.Option("--limit", min=1, help="Number of Products to show.")
+]
+
+
+@app.command()
+@run_async
+async def search(
+    ctx: typer.Context,
+    text: SearchTextArgument,
+    pickup_point: PickupPointOption = None,
+    limit: SearchLimitOption = SEARCH_LIMIT,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Search Products with their Price, stock and Offer at a Store."""
+    found = await with_session(
+        ctx,
+        email,
+        password,
+        lambda client: client.search(text, pickup_point=pickup_point, limit=limit),
+        "products",
+    )
+    if as_json:
+        typer.echo(to_json(found))
+    elif not found:
+        typer.echo("No products.")
+    else:
+        print_table(
+            ["Article", "Product", "Brand", "Price", "Unit Price", "Stock", "Offer"],
+            [product_row(product) for product in found],
+        )
+
+
+def product_row(product: Product) -> list[str]:
+    unit_price = f"{format_amount(product.unit_price)}/{product.unit}" if product.unit else ""
+    return [
+        product.article_number,
+        product.name,
+        product.brand,
+        format_amount(product.price),
+        unit_price,
+        "In stock" if product.in_stock else "Out of stock",
+        format_offer(product.offer) if product.offer else product.multibuy_offer or "",
+    ]
+
+
+def format_offer(offer: Offer) -> str:
+    text = f"{offer.label}: {format_amount(offer.price)}"
+    if offer.ends:
+        text += f" until {offer.ends.isoformat()}"
+    if offer.limit_per_customer:
+        text += f", max {offer.limit_per_customer} per customer"
+    return text
 
 
 def main() -> None:

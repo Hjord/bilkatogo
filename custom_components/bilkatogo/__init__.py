@@ -4,9 +4,9 @@ from homeassistant.helpers.httpx_client import create_async_httpx_client
 
 from bilkatogo import BilkaToGoClient
 
+from .announcer import announcers
 from .const import PLATFORMS
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator
-from .substitutions import SubstitutionAnnouncer
 from .token_storage import HomeAssistantTokenStorage
 
 
@@ -30,4 +30,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) -
 
 async def async_remove_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) -> None:
     await HomeAssistantTokenStorage(hass, entry.entry_id).async_remove()
-    await SubstitutionAnnouncer(hass, entry.entry_id).async_remove()
+    for announcer in announcers(hass, entry.entry_id):
+        await announcer.async_remove()

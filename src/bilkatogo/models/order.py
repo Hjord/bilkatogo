@@ -1,11 +1,13 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
 from ..const import BILKA_TIME_ZONE
 from .base import BilkaDataClass
+from .money import kroner
 
 
 class OrderStatus(StrEnum):
@@ -71,16 +73,29 @@ class PickupPoint(BilkaDataClass):
     address: str
     zip_code: str
     city: str
+    store_id: str | None = None
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> PickupPoint:
+    def from_order(cls, data: dict[str, Any]) -> PickupPoint:
         return cls(
             _raw=data,
             name=data.get("location") or "",
             address=data.get("address") or "",
             zip_code=str(data.get("zipCode") or ""),
             city=data.get("city") or "",
+        )
+
+    @classmethod
+    def from_delivery_address(cls, data: dict[str, Any]) -> PickupPoint:
+        store_id = data.get("sid")
+        return cls(
+            _raw=data,
+            name=(data.get("name") or "").strip(),
+            address=(data.get("street") or "").strip(),
+            zip_code=str(data.get("zip") or ""),
+            city=data.get("city") or "",
+            store_id=str(store_id) if store_id else None,
         )
 
 
@@ -94,8 +109,8 @@ class Order(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     delivered: bool
-    ordered_price: int
-    packed_price: int
+    ordered_price: Decimal
+    packed_price: Decimal
     content: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
@@ -110,11 +125,11 @@ class Order(BilkaDataClass):
             status_code=status_code,
             ordered_at=_ordered_at(data.get("ordered")),
             pickup_slot=PickupSlot.from_dict(data),
-            pickup_point=PickupPoint.from_dict(pickupzone) if pickupzone else None,
+            pickup_point=PickupPoint.from_order(pickupzone) if pickupzone else None,
             home_delivery=bool((pickupzone or {}).get("home_delivery", False)),
             delivered=bool(data.get("delivered", False)),
-            ordered_price=int(data.get("orderedPrice") or 0),
-            packed_price=int(data.get("packedPrice") or 0),
+            ordered_price=kroner(data.get("orderedPrice")),
+            packed_price=kroner(data.get("packedPrice")),
             content=data.get("content") or "",
         )
 

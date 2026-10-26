@@ -7,9 +7,12 @@ from .exceptions import (
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
+    UnknownPickupPointError,
 )
 from .models import (
     FINISHED_STATUSES,
+    MissingItem,
+    Offer,
     Order,
     OrderDetails,
     OrderLine,
@@ -17,6 +20,7 @@ from .models import (
     PickupCode,
     PickupPoint,
     PickupSlot,
+    Product,
     Substitution,
     current_order,
 )
@@ -35,6 +39,8 @@ __all__ = [
     "BilkaUnreachableError",
     "FileTokenStorage",
     "InvalidCredentialsError",
+    "MissingItem",
+    "Offer",
     "Order",
     "OrderDetails",
     "OrderLine",
@@ -42,9 +48,11 @@ __all__ = [
     "PickupCode",
     "PickupPoint",
     "PickupSlot",
+    "Product",
     "Substitution",
     "TokenStorage",
     "UnexpectedResponseError",
+    "UnknownPickupPointError",
     "__version__",
     "current_order",
 ]

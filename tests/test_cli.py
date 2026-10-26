@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 from bilkatogo import FileTokenStorage
 from bilkatogo.cli import app
-from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, form
+from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, algolia_query, form
 
 
 @pytest.fixture
@@ -180,11 +180,12 @@ def test_orders_json_output(invoke) -> None:
             "address": "Testvej 1",
             "zip_code": "9999",
             "city": "Eksempelby",
+            "store_id": None,
         },
         "home_delivery": False,
         "delivered": False,
-        "ordered_price": 45600,
-        "packed_price": 0,
+        "ordered_price": "456.00",
+        "packed_price": "0.00",
         "content": "Æbler, Havregryn, Letmælk",
     }
     assert collected["status"] == "picked_up"
@@ -271,11 +272,64 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Pickup Slot   Tue 27/10 12:00-14:00",
         "Pickup Point  Bilka Eksempelby",
         "Pickup Code   12345678",
+        "Ordered Total 512.00 kr",
+        "Order Total   509.00 kr",
+        "Deposit       0.00 kr",
+        "Service Fee   0.00 kr",
+        "Packaging     0.00 kr",
+        "Delivery Fee  0.00 kr",
+        "Discount      0.00 kr",
         "Substitutions",
         "  Æbler -> 4 x Pærer",
         "  Letmælk -> 3 x Minimælk",
+        "Missing Items none",
     ]
     assert len(bilka.calls("gigya_login")) == 1
+
+
+def test_order_shows_the_order_total_breakdown(invoke) -> None:
+    result = invoke("order", "900000000004", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[lines.index("Pickup Code   11223344") + 1 :] == [
+        "Ordered Total ",
+        "Order Total   793.80 kr",
+        "Deposit       1.50 kr",
+        "Service Fee   39.00 kr",
+        "Packaging     0.00 kr",
+        "Delivery Fee  0.00 kr",
+        "Discount      0.00 kr",
+        "Substitutions none",
+        "Missing Items none",
+    ]
+
+
+ORDER_TOTAL_KEYS = (
+    "order_total",
+    "ordered_total",
+    "deposit",
+    "service_fee",
+    "packaging",
+    "delivery_fee",
+    "discount",
+)
+
+
+def test_order_json_includes_the_order_total_breakdown(invoke) -> None:
+    result = invoke("order", "900000000004", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    details = json.loads(result.output)
+    assert {key: details[key] for key in ORDER_TOTAL_KEYS} == {
+        "order_total": "793.80",
+        "ordered_total": None,
+        "deposit": "1.50",
+        "service_fee": "39.00",
+        "packaging": "0.00",
+        "delivery_fee": "0.00",
+        "discount": "0.00",
+    }
 
 
 def test_order_without_substitutions_says_so(invoke) -> None:
@@ -283,7 +337,40 @@ def test_order_without_substitutions_says_so(invoke) -> None:
 
     assert result.exit_code == 0, result.output
     assert "Pickup Code   87654321" in result.output
-    assert result.output.splitlines()[-1] == "Substitutions none"
+    assert "Substitutions none" in result.output.splitlines()
+
+
+def test_order_lists_missing_items_after_substitutions(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[-5:] == [
+        "Substitutions",
+        "  Letmælk -> 3 x Minimælk",
+        "Missing Items",
+        "  Skyr: 2 of 4 missing",
+        "  Havregryn: 1 of 1 missing",
+    ]
+
+
+def test_order_json_includes_missing_items(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["missing_items"] == [
+        {
+            "product": "Skyr",
+            "article_number": "932058",
+            "ordered_quantity": 4,
+            "missing_quantity": 2,
+        },
+        {
+            "product": "Havregryn",
+            "article_number": "1006",
+            "ordered_quantity": 1,
+            "missing_quantity": 1,
+        },
+    ]
 
 
 def test_order_json_output(invoke) -> None:
@@ -306,7 +393,7 @@ def test_order_json_output(invoke) -> None:
         "product_id": 1003,
         "name": "Rugbrød",
         "quantity": 1,
-        "amount": 2500,
+        "amount": "25.00",
         "substituted": False,
         "unavailable_reason": "",
     }
@@ -346,6 +433,150 @@ def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> 
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) is None
+
+
+def test_pickup_points_table_marks_the_carts_pickup_point(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0].split() == ["Pickup", "Point", "Address", "Store"]
+    assert len(lines) == 23
+    [chosen] = [line for line in lines if line.startswith("*")]
+    assert chosen.split()[1:4] == ["Bilka", "Waves,", "Hundige"]
+    assert chosen.split()[-1] == "1653"
+    [fredericia] = [line for line in lines if "Pickup Fredericia" in line]
+    assert "Strandvejen 220, 7000 Fredericia" in fredericia
+    assert fredericia.split()[-1] == "1662"
+
+
+def test_pickup_points_json(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    points = json.loads(result.output)
+    assert len(points) == 22
+    assert points[1] == {
+        "name": "Pickup Fredericia",
+        "address": "Strandvejen 220",
+        "zip_code": "7000",
+        "city": "Fredericia",
+        "store_id": "1662",
+        "chosen": False,
+    }
+    assert [point["name"] for point in points if point["chosen"]] == ["Bilka Waves, Hundige"]
+
+
+def search_rows(output: str) -> dict[str, str]:
+    return {line.split()[0]: line for line in output.splitlines()[1:]}
+
+
+def test_search_lists_products_with_price_stock_and_offer(invoke) -> None:
+    result = invoke("search", "e", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    header, *_ = result.output.splitlines()
+    assert header.split() == [
+        "Article",
+        "Product",
+        "Brand",
+        "Price",
+        "Unit",
+        "Price",
+        "Stock",
+        "Offer",
+    ]
+    rows = search_rows(result.output)
+    assert list(rows) == ["17924601", "10604691", "89300500105", "10818787", "11100367"]
+    assert "Cheasy" in rows["17924601"]
+    assert "30.95 kr  30.95 kr/kg  In stock" in rows["17924601"]
+    assert rows["10604691"].rstrip().endswith("Skarp pris: 25.00 kr")
+    assert rows["89300500105"].rstrip().endswith("Mix 10 for 25,00")
+    assert "Out of stock" in rows["10818787"]
+    assert rows["11100367"].rstrip().endswith("Spar 4,95: 60.00 kr until 2026-10-29")
+    assert "64.95 kr  99.92 kr/kg  Out of stock" in rows["11100367"]
+
+
+def test_search_pickup_point_and_limit(invoke, bilka: FakeBilka) -> None:
+    result = invoke(
+        "search",
+        "skyr",
+        "--pickup-point",
+        "Bilka Vejle",
+        "--limit",
+        "1",
+        "--email",
+        EMAIL,
+        "--password",
+        PASSWORD,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert list(search_rows(result.output)) == ["17924601"]
+    query = algolia_query(bilka.calls("algolia")[0])
+    assert query["filters"] == "isInAssortmentIn:1661 AND nonsearchable:false"
+    assert query["hitsPerPage"] == "1"
+
+
+def test_search_shows_the_limit_per_customer(invoke, bilka: FakeBilka) -> None:
+    bilka.products[1]["storeData"]["1653"]["offerMax"] = 3
+
+    result = invoke("search", "skyr", "--email", EMAIL, "--password", PASSWORD)
+
+    assert (
+        search_rows(result.output)["10604691"]
+        .rstrip()
+        .endswith("Skarp pris: 25.00 kr, max 3 per customer")
+    )
+
+
+def test_search_without_matches(invoke) -> None:
+    result = invoke("search", "lakrids", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == "No products."
+
+
+def test_search_at_an_unknown_pickup_point_fails_clearly(invoke) -> None:
+    result = invoke(
+        "search",
+        "skyr",
+        "--pickup-point",
+        "Bilka Atlantis",
+        "--email",
+        EMAIL,
+        "--password",
+        PASSWORD,
+    )
+
+    assert result.exit_code == 1
+    assert "Unknown Pickup Point 'Bilka Atlantis'" in result.output
+
+
+def test_search_json(invoke) -> None:
+    result = invoke("search", "skyr", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    plain, offered = json.loads(result.output)
+    assert plain["offer"] is None
+    assert offered == {
+        "article_number": "10604691",
+        "name": "Skyr m. vanilje 0,2 % fedt øko",
+        "brand": "Salling ØKO",
+        "store_id": "1653",
+        "price": "39.31",
+        "unit_price": "49.14",
+        "unit": "kg",
+        "in_stock": True,
+        "offer": {
+            "label": "Skarp pris",
+            "price": "25.00",
+            "unit_price": "31.25",
+            "ends": None,
+            "limit_per_customer": None,
+        },
+        "multibuy_offer": None,
+    }
 
 
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(

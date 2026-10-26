@@ -19,8 +19,8 @@ from bilkatogo import (
     current_order,
 )
 
+from .announcer import announcers
 from .const import DOMAIN, FAST_UPDATE_INTERVAL, FAST_UPDATE_LEAD_TIME, LOGGER, UPDATE_INTERVAL
-from .substitutions import SubstitutionAnnouncer
 
 DETAILS_STATUSES = frozenset(
     {OrderStatus.PACKED, OrderStatus.NOT_COLLECTED, OrderStatus.CANCELLED, OrderStatus.SOLD_OUT}
@@ -58,10 +58,11 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
             update_interval=UPDATE_INTERVAL,
         )
         self.client = client
-        self.announcer = SubstitutionAnnouncer(hass, entry.entry_id)
+        self.announcers = announcers(hass, entry.entry_id)
 
     async def _async_setup(self) -> None:
-        await self.announcer.async_load()
+        for announcer in self.announcers:
+            await announcer.async_load()
 
     async def _async_update_data(self) -> BilkaToGoData:
         try:
@@ -81,7 +82,8 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
             ) from err
         self.update_interval = polling_interval(order, dt_util.utcnow())
         if details:
-            await self.announcer.async_announce(details)
+            for announcer in self.announcers:
+                await announcer.async_announce(details)
         return BilkaToGoData(order=order, details=details)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
@@ -97,7 +99,7 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         if order.status is OrderStatus.PICKED_UP:
             if previous and previous.order_number == order.order_number:
                 return previous
-            return await self.client.get_order(order.order_number)
+            return await self.client.get_order(order)
         if order.status in DETAILS_STATUSES:
-            return await self.client.get_order(order.order_number)
+            return await self.client.get_order(order)
         return None

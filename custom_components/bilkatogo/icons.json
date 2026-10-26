@@ -7,6 +7,12 @@
       "substitutions": {
         "default": "mdi:swap-horizontal"
       },
+      "missing_items": {
+        "default": "mdi:cart-remove"
+      },
+      "order_total": {
+        "default": "mdi:cash"
+      },
       "pickup_slot": {
         "default": "mdi:clock-outline"
       },
