@@ -24,6 +24,7 @@ from .models import (
     Cart,
     Offer,
     Order,
+    OrderDetails,
     OrderStatus,
     PickupPoint,
     PickupSlot,
@@ -266,37 +267,20 @@ async def order(
 ) -> None:
     """Show an Order (default: the Current Order), its Order Total and what packing changed."""
     check_redact(raw, redact)
-    if raw:
-        if order_number is None:
-            data = await with_session(
-                ctx,
-                email,
-                password,
-                lambda client: client.get_current_order_json(),
-                "the current order",
-            )
-        else:
-            data = await with_session(
-                ctx,
-                email,
-                password,
-                lambda client: client.get_order_json(order_number),
-                f"order {order_number}",
-            )
-        print_raw(data, redact)
-        return
+    fetch_raw: Callable[[BilkaToGoClient], Awaitable[dict[str, Any] | None]]
+    fetch: Callable[[BilkaToGoClient], Awaitable[OrderDetails | None]]
     if order_number is None:
-        details = await with_session(
-            ctx, email, password, lambda client: client.get_current_order(), "the current order"
-        )
+        what = "the current order"
+        fetch_raw = BilkaToGoClient.get_current_order_json
+        fetch = BilkaToGoClient.get_current_order
     else:
-        details = await with_session(
-            ctx,
-            email,
-            password,
-            lambda client: client.get_order(order_number),
-            f"order {order_number}",
-        )
+        what = f"order {order_number}"
+        fetch_raw = functools.partial(BilkaToGoClient.get_order_json, order=order_number)
+        fetch = functools.partial(BilkaToGoClient.get_order, order=order_number)
+    if raw:
+        print_raw(await with_session(ctx, email, password, fetch_raw, what), redact)
+        return
+    details = await with_session(ctx, email, password, fetch, what)
     if as_json:
         typer.echo(to_json(details))
         return
