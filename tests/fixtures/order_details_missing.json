@@ -1,0 +1,90 @@
+{
+  "_synthetic": [
+    "No real Missing Item has been captured yet; this Order is a synthetic variation of order_details_substituted.json.",
+    "Assumed shape of a Missing Item line: non-empty unavailable_reason, replacement null, no children.",
+    "Assumed: unavailable_quantity holds how many were not packed; when it is absent the whole quantity is missing.",
+    "Assumed: stat.oos is true on an Order with Missing Items.",
+    "Replace with a real capture: the client logs every Missing Item line at warning level."
+  ],
+  "order": {
+    "orderId": "900000000003",
+    "status": "Pakket",
+    "deliveryDate": "2026-11-05",
+    "deliveryInterval": {"start": "12:00:00", "end": "14:00:00"},
+    "deliveryAddress": {
+      "location": "Bilka Eksempelby",
+      "address": "Testvej 1",
+      "zipCode": "9999",
+      "city": "Eksempelby",
+      "order_pickup_code": "11223344",
+      "home_delivery": false
+    },
+    "price": 38400,
+    "stat": {"has_replacements": true, "oos": true},
+    "lines": [
+      {
+        "headline": "Mejeri",
+        "type": "",
+        "lines": [
+          {
+            "orderlines": [
+              {
+                "quantity": 4,
+                "unavailable_quantity": 2,
+                "amount": 1400,
+                "product": {"objectID": 932058, "name": "Skyr"},
+                "unavailable_reason": "Udsolgt",
+                "replacement": null,
+                "strikethrough": null,
+                "tagline": null,
+                "children": []
+              },
+              {
+                "quantity": 2,
+                "amount": 1100,
+                "product": {"objectID": 1004, "name": "Letmælk"},
+                "unavailable_reason": "Udsolgt",
+                "replacement": null,
+                "strikethrough": true,
+                "tagline": "erstattet",
+                "children": [
+                  {"quantity": 3, "amount": 1950, "product": {"objectID": 1005, "name": "Minimælk"}}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "headline": "Kolonial",
+        "type": "",
+        "lines": [
+          {
+            "orderlines": [
+              {
+                "quantity": 1,
+                "amount": 2200,
+                "product": {"objectID": 1006, "name": "Havregryn"},
+                "unavailable_reason": "Udsolgt",
+                "replacement": null,
+                "strikethrough": null,
+                "tagline": null,
+                "children": []
+              },
+              {
+                "quantity": 1,
+                "amount": 2500,
+                "product": {"objectID": 1003, "name": "Rugbrød"},
+                "unavailable_reason": "",
+                "replacement": null,
+                "strikethrough": null,
+                "tagline": null,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

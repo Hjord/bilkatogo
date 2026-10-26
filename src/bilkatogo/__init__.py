@@ -10,6 +10,7 @@ from .exceptions import (
 )
 from .models import (
     FINISHED_STATUSES,
+    MissingItem,
     Order,
     OrderDetails,
     OrderLine,
@@ -35,6 +36,7 @@ __all__ = [
     "BilkaUnreachableError",
     "FileTokenStorage",
     "InvalidCredentialsError",
+    "MissingItem",
     "Order",
     "OrderDetails",
     "OrderLine",
