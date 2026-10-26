@@ -1,10 +1,15 @@
 from datetime import UTC, datetime, timedelta
 from types import TracebackType
 from typing import Any, Self
+from urllib.parse import urlencode
 
 import httpx
 
 from .const import (
+    ALGOLIA_APP_ID,
+    ALGOLIA_PRODUCT_INDEX,
+    ALGOLIA_QUERIES_URL,
+    ALGOLIA_SEARCH_KEY,
     API_BASE_URL,
     API_HOST,
     CART_PARAMS,
@@ -16,6 +21,7 @@ from .const import (
     JWT_RENEWAL_MARGIN,
     ORDER_HISTORY_PAGE_SIZE,
     ORDER_HISTORY_PARAMS,
+    SEARCH_LIMIT,
     WEB_PARAMS,
 )
 from .exceptions import (
@@ -25,7 +31,7 @@ from .exceptions import (
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
-from .models import Order, OrderDetails, PickupPoint, current_order
+from .models import Order, OrderDetails, PickupPoint, Product, current_order
 from .token_storage import TokenStorage
 
 
@@ -137,6 +143,43 @@ class BilkaToGoClient:
         data = await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
         address = data.get("deliveryAddress")
         return PickupPoint.from_dict(address) if address else None
+
+    async def search(
+        self, text: str, *, pickup_point: str | None = None, limit: int = SEARCH_LIMIT
+    ) -> list[Product]:
+        point = (
+            await self.get_pickup_point(pickup_point)
+            if pickup_point is not None
+            else await self.get_cart_pickup_point()
+        )
+        if point is None or point.store_id is None:
+            raise BilkaToGoError("No Pickup Point chosen in the Cart; name one to search at")
+        store_id = point.store_id
+        params = urlencode(
+            {
+                "query": text,
+                "hitsPerPage": limit,
+                "filters": f"isInAssortmentIn:{store_id} AND nonsearchable:false",
+            }
+        )
+        response = await self._request(
+            "POST",
+            ALGOLIA_QUERIES_URL,
+            headers={
+                "x-algolia-application-id": ALGOLIA_APP_ID,
+                "x-algolia-api-key": ALGOLIA_SEARCH_KEY,
+            },
+            json={"requests": [{"indexName": ALGOLIA_PRODUCT_INDEX, "params": params}]},
+        )
+        if response.status_code != 200:
+            raise UnexpectedResponseError(f"Product search failed with HTTP {response.status_code}")
+        try:
+            [result] = self._json(response, "Product search")["results"]
+            hits = result["hits"]
+        except KeyError, TypeError, ValueError:
+            raise UnexpectedResponseError("Product search answered without results") from None
+        products = (Product.from_hit(hit, store_id) for hit in hits)
+        return [product for product in products if product is not None]
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()
