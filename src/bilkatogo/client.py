@@ -6,6 +6,7 @@ import httpx
 
 from .const import (
     API_BASE_URL,
+    API_HOST,
     GIGYA_API_KEY,
     GIGYA_BASE_URL,
     GIGYA_INVALID_LOGIN_ID,
@@ -22,7 +23,7 @@ class BilkaToGoClient:
     def __init__(
         self,
         email: str,
-        password: str,
+        password: str | None = None,
         *,
         token_storage: TokenStorage | None = None,
         httpx_client: httpx.AsyncClient | None = None,
@@ -50,7 +51,12 @@ class BilkaToGoClient:
             await self._http.aclose()
 
     async def login(self) -> None:
-        login_token = await self._gigya_login()
+        await self._login()
+
+    async def _login(self) -> str:
+        if self._password is None:
+            raise InvalidCredentialsError("A password is needed to log in")
+        login_token = await self._gigya_login(self._password)
         jwt = await self._gigya_jwt(login_token)
         expires_at = datetime.now(UTC) + timedelta(seconds=JWT_LIFETIME_SECONDS)
         response = await self._http.post(
@@ -68,6 +74,7 @@ class BilkaToGoClient:
                     "cookies": dict(response.cookies),
                 }
             )
+        return jwt
 
     async def get_orders(self, limit: int = 5, offset: int = 0) -> list[Order]:
         data = await self._shop_post(
@@ -77,24 +84,40 @@ class BilkaToGoClient:
         return [Order.from_dict(order) for order in data.get("orders") or []]
 
     async def _shop_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        if self._jwt is None:
-            await self.login()
-        assert self._jwt is not None
+        jwt = self._jwt or await self._restore_session() or await self._login()
         response = await self._http.post(
             f"{API_BASE_URL}/{path}",
             params={**WEB_PARAMS, **params},
-            headers={"jwt_token": self._jwt},
+            headers={"jwt_token": jwt},
         )
         if response.status_code != 200:
             raise BilkaToGoError(f"{path} failed with HTTP {response.status_code}")
         return response.json()
 
-    async def _gigya_login(self) -> str:
+    async def _restore_session(self) -> str | None:
+        if self._token_storage is None:
+            return None
+        session = await self._token_storage.load()
+        if not session or session.get("email") != self._email:
+            return None
+        try:
+            expires_at = datetime.fromisoformat(session["jwt_expires_at"])
+            jwt = session["jwt"]
+        except KeyError, TypeError, ValueError:
+            return None
+        if expires_at <= datetime.now(UTC):
+            return None
+        for name, value in (session.get("cookies") or {}).items():
+            self._http.cookies.set(name, value, domain=API_HOST)
+        self._jwt = jwt
+        return jwt
+
+    async def _gigya_login(self, password: str) -> str:
         data = await self._gigya(
             "accounts.login",
             {
                 "loginID": self._email,
-                "password": self._password,
+                "password": password,
                 "apiKey": GIGYA_API_KEY,
                 "httpStatusCodes": "true",
             },

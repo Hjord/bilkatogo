@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 
 import pytest
 
-from bilkatogo import BilkaToGoClient, Order, OrderStatus
+from bilkatogo import BilkaToGoClient, InvalidCredentialsError, Order, OrderStatus
 from tests.conftest import MemoryTokenStorage
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, load_fixture
 
@@ -19,6 +19,78 @@ async def fetch_one(bilka: FakeBilka, order: dict) -> Order:
 
 def synthetic_order(**overrides) -> dict:
     return {**load_fixture("order_history.json")["orders"][0], **overrides}
+
+
+async def log_in(bilka: FakeBilka, storage: MemoryTokenStorage) -> None:
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        await client.login()
+
+
+@pytest.mark.asyncio
+async def test_stored_session_is_used_without_a_password(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, token_storage=storage, httpx_client=http) as client,
+    ):
+        orders = await client.get_orders()
+
+    assert len(orders) == 2
+    assert len(bilka.calls("gigya_login")) == 1
+
+
+@pytest.mark.asyncio
+async def test_expired_stored_session_logs_in_again(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+    assert storage.data is not None
+    storage.data["jwt_expires_at"] = "2020-01-01T00:00:00+00:00"
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        await client.get_orders()
+
+    assert len(bilka.calls("gigya_login")) == 2
+    assert storage.data["jwt_expires_at"] != "2020-01-01T00:00:00+00:00"
+
+
+@pytest.mark.asyncio
+async def test_stored_session_of_another_account_is_not_used(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient("anden@example.com", token_storage=storage, httpx_client=http) as client,
+    ):
+        with pytest.raises(InvalidCredentialsError):
+            await client.get_orders()
+
+    assert bilka.calls("order_history") == []
+
+
+@pytest.mark.asyncio
+async def test_login_needed_without_a_password_raises_invalid_credentials(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, token_storage=storage, httpx_client=http) as client,
+    ):
+        with pytest.raises(InvalidCredentialsError):
+            await client.get_orders()
+
+    assert bilka.requests == []
 
 
 @pytest.mark.asyncio
