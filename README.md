@@ -62,6 +62,8 @@ asyncio.run(main())
 - `Order.status` is an `OrderStatus` (Processing, Received, Packed, Picked Up, Not Collected,
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
+- `Product.article_number` from `search()` is Bilka's `objectID`, the same Article Number that
+  Order Lines and Missing Items carry.
 - `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
 - Amounts are `Decimal` kroner.
 - `OrderDetails.order_total` is the Order Total, broken down into `deposit`, `service_fee`,
@@ -92,7 +94,7 @@ bilkatogo orders --limit 10     # list your most recent orders
 bilkatogo order                 # show the Current Order with its details
 bilkatogo order 900000000001    # show one order by Order Number
 bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
-bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
+bilkatogo search skyr           # Products with Article Number, Price, stock and Offer at your Cart's Store
 bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
 bilkatogo cart                  # your Cart Lines, the Cart total and your Pickup Point
 ```

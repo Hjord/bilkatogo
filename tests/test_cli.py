@@ -487,14 +487,14 @@ def test_search_lists_products_with_price_stock_and_offer(invoke) -> None:
         "Offer",
     ]
     rows = search_rows(result.output)
-    assert list(rows) == ["17924601", "10604691", "89300500105", "10818787", "11100367"]
-    assert "Cheasy" in rows["17924601"]
-    assert "30.95 kr  30.95 kr/kg  In stock" in rows["17924601"]
-    assert rows["10604691"].rstrip().endswith("Skarp pris: 25.00 kr")
-    assert rows["89300500105"].rstrip().endswith("Mix 10 for 25,00")
-    assert "Out of stock" in rows["10818787"]
-    assert rows["11100367"].rstrip().endswith("Spar 4,95: 60.00 kr until 2026-10-29")
-    assert "64.95 kr  99.92 kr/kg  Out of stock" in rows["11100367"]
+    assert list(rows) == ["19753", "128298", "18381", "140787", "169794"]
+    assert "Cheasy" in rows["19753"]
+    assert "30.95 kr  30.95 kr/kg  In stock" in rows["19753"]
+    assert rows["128298"].rstrip().endswith("Skarp pris: 25.00 kr")
+    assert rows["18381"].rstrip().endswith("Mix 10 for 25,00")
+    assert "Out of stock" in rows["140787"]
+    assert rows["169794"].rstrip().endswith("Spar 4,95: 60.00 kr until 2026-10-29")
+    assert "64.95 kr  99.92 kr/kg  Out of stock" in rows["169794"]
 
 
 def test_search_pickup_point_and_limit(invoke, bilka: FakeBilka) -> None:
@@ -512,7 +512,7 @@ def test_search_pickup_point_and_limit(invoke, bilka: FakeBilka) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert list(search_rows(result.output)) == ["17924601"]
+    assert list(search_rows(result.output)) == ["19753"]
     query = algolia_query(bilka.calls("algolia")[0])
     assert query["filters"] == "isInAssortmentIn:1661 AND nonsearchable:false"
     assert query["hitsPerPage"] == "1"
@@ -524,7 +524,7 @@ def test_search_shows_the_limit_per_customer(invoke, bilka: FakeBilka) -> None:
     result = invoke("search", "skyr", "--email", EMAIL, "--password", PASSWORD)
 
     assert (
-        search_rows(result.output)["10604691"]
+        search_rows(result.output)["128298"]
         .rstrip()
         .endswith("Skarp pris: 25.00 kr, max 3 per customer")
     )
@@ -560,7 +560,7 @@ def test_search_json(invoke) -> None:
     plain, offered = json.loads(result.output)
     assert plain["offer"] is None
     assert offered == {
-        "article_number": "10604691",
+        "article_number": "128298",
         "name": "Skyr m. vanilje 0,2 % fedt øko",
         "brand": "Salling ØKO",
         "store_id": "1653",

@@ -50,7 +50,7 @@ class Product(BilkaDataClass):
         price = (store.get("beforePrice") or hit.get("price")) if offer else store.get("price")
         return cls(
             _raw=hit,
-            article_number=str(hit["article"]),
+            article_number=str(hit["objectID"]),
             name=hit.get("name") or "",
             brand=hit.get("brand") or "",
             store_id=store_id,
