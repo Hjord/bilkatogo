@@ -1,0 +1,69 @@
+from datetime import timedelta
+
+import httpx
+import pytest
+from freezegun.api import FrozenDateTimeFactory
+from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
+
+from custom_components.bilkatogo.const import DOMAIN
+from tests.fake_bilka import FakeBilka, Scripted
+from tests.ha.conftest import SetupIntegration
+
+FAILURES: dict[str, Scripted] = {
+    "unreachable": httpx.ConnectError("down"),
+    "timeout": httpx.ReadTimeout("slow"),
+    "server_error": httpx.Response(500, text="oops"),
+    "not_json": httpx.Response(200, text="<html>maintenance</html>"),
+}
+
+
+async def next_update(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    freezer.tick(timedelta(minutes=60))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+def order_status(hass: HomeAssistant, entry: MockConfigEntry) -> str:
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_order_status"
+    )
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    return state.state
+
+
+@pytest.mark.parametrize("failure", FAILURES.values(), ids=FAILURES.keys())
+async def test_failed_update_makes_entities_unavailable_without_reauth(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+    failure: Scripted,
+) -> None:
+    entry = await setup_integration()
+    bilka.script("order_history", failure)
+
+    await next_update(hass, freezer)
+
+    assert order_status(hass, entry) == STATE_UNAVAILABLE
+    assert hass.config_entries.flow.async_progress_by_handler(DOMAIN) == []
+
+
+async def test_entities_recover_on_the_next_successful_update(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    entry = await setup_integration()
+    bilka.script("order_history", httpx.ConnectError("down"))
+    await next_update(hass, freezer)
+    assert order_status(hass, entry) == STATE_UNAVAILABLE
+
+    await next_update(hass, freezer)
+
+    assert order_status(hass, entry) == "received"
