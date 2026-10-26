@@ -47,7 +47,7 @@ class Product(BilkaDataClass):
                 ends=_date(store.get("offerUntil")),
                 limit_per_customer=_whole_number(store.get("offerMax")),
             )
-        price = store.get("beforePrice") or hit.get("price") if offer else store.get("price")
+        price = (store.get("beforePrice") or hit.get("price")) if offer else store.get("price")
         return cls(
             _raw=hit,
             article_number=str(hit["article"]),
