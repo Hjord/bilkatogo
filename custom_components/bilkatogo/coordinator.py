@@ -15,6 +15,7 @@ from bilkatogo import (
 from bilkatogo.const import CURRENT_ORDER_SCAN_LIMIT
 
 from .const import DOMAIN, LOGGER, UPDATE_INTERVAL
+from .substitutions import SubstitutionAnnouncer
 
 type BilkaToGoConfigEntry = ConfigEntry[BilkaToGoCoordinator]
 
@@ -41,6 +42,10 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
             update_interval=UPDATE_INTERVAL,
         )
         self.client = client
+        self.announcer = SubstitutionAnnouncer(hass, entry.entry_id)
+
+    async def _async_setup(self) -> None:
+        await self.announcer.async_load()
 
     async def _async_update_data(self) -> BilkaToGoData:
         try:
@@ -52,6 +57,8 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
                 translation_key="update_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        if details:
+            await self.announcer.async_announce(details)
         return BilkaToGoData(order=order, details=details)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
