@@ -9,3 +9,5 @@ DOMAIN = "bilkatogo"
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 UPDATE_INTERVAL = timedelta(minutes=60)
+FAST_UPDATE_INTERVAL = timedelta(minutes=5)
+FAST_UPDATE_LEAD_TIME = timedelta(hours=3)
