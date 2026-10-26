@@ -68,6 +68,35 @@
           }
         }
       },
+      "order_total": {
+        "name": "Ordretotal",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "ordered_total": {
+            "name": "Ordretotal ved bestilling"
+          },
+          "difference": {
+            "name": "Forskel fra bestilling"
+          },
+          "deposit": {
+            "name": "Pant"
+          },
+          "service_fee": {
+            "name": "Pakkeservice"
+          },
+          "packaging": {
+            "name": "Emballage"
+          },
+          "delivery_fee": {
+            "name": "Leveringsgebyr"
+          },
+          "discount": {
+            "name": "Rabat"
+          }
+        }
+      },
       "pickup_slot": {
         "name": "Afhentningstidspunkt",
         "state_attributes": {

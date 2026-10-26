@@ -132,11 +132,14 @@ All entities describe the Current Order.
 | Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code |
 | Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
 | Missing Items | Number of products packed short without a replacement | List of Product, Article Number, ordered and missing quantity |
+| Order Total | What you pay for the order now (DKK) | Order Number, Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
 | Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, price (DKK), Pickup Slot end |
 | Pickup Code | The code you enter at check-in | Order Number, price (DKK) |
 | Pickup Point | The Bilka store you pick up from | Order Number, price (DKK) |
 
-Substitutions, Missing Items and the Pickup Code are fetched once the order is packed.
+Substitutions, Missing Items, the Pickup Code and the Order Total breakdown (Deposit, Service
+Fee, Packaging, Delivery Fee, Discount) are fetched once the order is packed. Before that the
+Order Total is Bilka's estimate from the order history.
 
 An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
 not know yet; the code is in the attribute. Without any order the entities have no state.
