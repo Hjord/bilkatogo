@@ -271,11 +271,62 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Pickup Slot   Tue 27/10 12:00-14:00",
         "Pickup Point  Bilka Eksempelby",
         "Pickup Code   12345678",
+        "Ordered Total 512.00 kr",
+        "Order Total   509.00 kr",
+        "Deposit       0.00 kr",
+        "Service Fee   0.00 kr",
+        "Packaging     0.00 kr",
+        "Delivery Fee  0.00 kr",
+        "Discount      0.00 kr",
         "Substitutions",
         "  Æbler -> 4 x Pærer",
         "  Letmælk -> 3 x Minimælk",
     ]
     assert len(bilka.calls("gigya_login")) == 1
+
+
+def test_order_shows_the_order_total_breakdown(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[lines.index("Pickup Code   11223344") + 1 :] == [
+        "Ordered Total ",
+        "Order Total   793.80 kr",
+        "Deposit       1.50 kr",
+        "Service Fee   39.00 kr",
+        "Packaging     0.00 kr",
+        "Delivery Fee  0.00 kr",
+        "Discount      0.00 kr",
+        "Substitutions none",
+    ]
+
+
+ORDER_TOTAL_KEYS = (
+    "price",
+    "ordered_total",
+    "deposit",
+    "service_fee",
+    "packaging",
+    "delivery_fee",
+    "discount",
+)
+
+
+def test_order_json_includes_the_order_total_breakdown(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    details = json.loads(result.output)
+    assert {key: details[key] for key in ORDER_TOTAL_KEYS} == {
+        "price": "793.80",
+        "ordered_total": None,
+        "deposit": "1.50",
+        "service_fee": "39.00",
+        "packaging": "0.00",
+        "delivery_fee": "0.00",
+        "discount": "0.00",
+    }
 
 
 def test_order_without_substitutions_says_so(invoke) -> None:

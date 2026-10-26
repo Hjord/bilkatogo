@@ -210,6 +210,10 @@ def format_point(point: PickupPoint | None, home_delivery: bool) -> str:
     return "Home Delivery" if home_delivery else (point.name if point else "")
 
 
+def format_amount(amount: Decimal | None) -> str:
+    return "" if amount is None else f"{amount:.2f} kr"
+
+
 def format_status(status: OrderStatus) -> str:
     return status.name.replace("_", " ").title()
 
@@ -229,7 +233,7 @@ async def order(
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Show one Order, or the Current Order, with its Pickup Code and Substitutions."""
+    """Show one Order, or the Current Order, with its Pickup Code, Order Total and Substitutions."""
     if order_number is None:
         details = await with_session(
             ctx, email, password, lambda client: client.get_current_order(), "the current order"
@@ -254,6 +258,13 @@ async def order(
         ("Pickup Slot", format_slot(details.pickup_slot)),
         ("Pickup Point", format_point(details.pickup_point, details.home_delivery)),
         ("Pickup Code", details.pickup_code.code if details.pickup_code else ""),
+        ("Ordered Total", format_amount(details.ordered_total)),
+        ("Order Total", format_amount(details.price)),
+        ("Deposit", format_amount(details.deposit)),
+        ("Service Fee", format_amount(details.service_fee)),
+        ("Packaging", format_amount(details.packaging)),
+        ("Delivery Fee", format_amount(details.delivery_fee)),
+        ("Discount", format_amount(details.discount)),
     ]
     for label, value in fields:
         typer.echo(f"{label:<13} {value}")
