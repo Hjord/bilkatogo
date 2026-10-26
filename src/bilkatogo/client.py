@@ -16,7 +16,7 @@ from .const import (
     WEB_PARAMS,
 )
 from .exceptions import BilkaToGoError, InvalidCredentialsError
-from .models import Order
+from .models import Order, OrderDetails
 from .token_storage import TokenStorage
 
 
@@ -81,7 +81,8 @@ class BilkaToGoClient:
         orders: list[Order] = []
         while len(orders) < limit:
             page_size = min(ORDER_HISTORY_PAGE_SIZE, limit - len(orders))
-            data = await self._shop_post(
+            data = await self._shop_request(
+                "POST",
                 "shop/v7/OrderHistory",
                 {"limit": page_size, "offset": offset + len(orders), **ORDER_HISTORY_PARAMS},
             )
@@ -91,9 +92,17 @@ class BilkaToGoClient:
                 break
         return orders
 
-    async def _shop_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+    async def get_order(self, order_number: str) -> OrderDetails:
+        data = await self._shop_request("GET", "shop/v7/OrderDetails", {"orderId": order_number})
+        order = data.get("order")
+        if not order:
+            raise BilkaToGoError(f"Order {order_number} was not found")
+        return OrderDetails.from_dict(order)
+
+    async def _shop_request(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._jwt or await self._restore_session() or await self._login()
-        response = await self._http.post(
+        response = await self._http.request(
+            method,
             f"{API_BASE_URL}/{path}",
             params={**WEB_PARAMS, **params},
             headers={"jwt_token": jwt},

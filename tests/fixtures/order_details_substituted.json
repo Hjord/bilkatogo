@@ -1,0 +1,74 @@
+{
+  "order": {
+    "orderId": "900000000001",
+    "status": "Faktureret",
+    "deliveryDate": "2026-10-27",
+    "deliveryInterval": {"start": "12:00:00", "end": "14:00:00"},
+    "deliveryAddress": {
+      "location": "Bilka Eksempelby",
+      "address": "Testvej 1",
+      "zipCode": "9999",
+      "city": "Eksempelby",
+      "order_pickup_code": "12345678",
+      "home_delivery": false
+    },
+    "price": 50900,
+    "stat": {"has_replacements": true, "oos": false},
+    "lines": [
+      {
+        "headline": "Frugt & grønt",
+        "type": "",
+        "lines": [
+          {
+            "orderlines": [
+              {
+                "quantity": 4,
+                "amount": 1200,
+                "product": {"objectID": 1001, "name": "Æbler"},
+                "unavailable_reason": "",
+                "replacement": null,
+                "strikethrough": true,
+                "tagline": "erstattet",
+                "children": [
+                  {"quantity": 4, "amount": 1200, "product": {"objectID": 1002, "name": "Pærer"}}
+                ]
+              },
+              {
+                "quantity": 1,
+                "amount": 2500,
+                "product": {"objectID": 1003, "name": "Rugbrød"},
+                "unavailable_reason": "",
+                "replacement": null,
+                "strikethrough": null,
+                "tagline": null,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "headline": "Mejeri",
+        "type": "",
+        "lines": [
+          {
+            "orderlines": [
+              {
+                "quantity": 2,
+                "amount": 1100,
+                "product": {"objectID": 1004, "name": "Letmælk"},
+                "unavailable_reason": "",
+                "replacement": null,
+                "strikethrough": true,
+                "tagline": "erstattet",
+                "children": [
+                  {"quantity": 2, "amount": 1300, "product": {"objectID": 1005, "name": "Minimælk"}}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
