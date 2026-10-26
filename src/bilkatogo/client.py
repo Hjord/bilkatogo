@@ -37,6 +37,10 @@ from .models import Cart, Order, OrderDetails, PickupPoint, Product, current_ord
 from .token_storage import TokenStorage
 
 
+def _order_number(order: str | Order) -> str:
+    return order if isinstance(order, str) else order.order_number
+
+
 class BilkaToGoClient:
     def __init__(
         self,
@@ -112,7 +116,7 @@ class BilkaToGoClient:
         return orders
 
     async def get_order(self, order: str | Order) -> OrderDetails:
-        order_number = order if isinstance(order, str) else order.order_number
+        order_number = _order_number(order)
         details = (await self.get_order_json(order_number)).get("order")
         if not details:
             raise BilkaToGoError(f"Order {order_number} was not found")
@@ -122,16 +126,18 @@ class BilkaToGoClient:
         )
 
     async def get_current_order(self) -> OrderDetails | None:
-        order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
+        order = await self._current_order()
         return await self.get_order(order) if order else None
 
     async def get_order_json(self, order: str | Order) -> dict[str, Any]:
-        order_number = order if isinstance(order, str) else order.order_number
-        return await self._shop("GET", "shop/v7/OrderDetails", {"orderId": order_number})
+        return await self._shop("GET", "shop/v7/OrderDetails", {"orderId": _order_number(order)})
 
     async def get_current_order_json(self) -> dict[str, Any] | None:
-        order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
+        order = await self._current_order()
         return await self.get_order_json(order) if order else None
+
+    async def _current_order(self) -> Order | None:
+        return current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
 
     async def _find_order(self, order_number: str) -> Order | None:
         orders = await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT)
