@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from types import TracebackType
 from typing import Any, Self
@@ -162,6 +163,9 @@ class BilkaToGoClient:
                 "query": text,
                 "hitsPerPage": limit,
                 "filters": f"isInAssortmentIn:{store_id} AND nonsearchable:false",
+                "attributesToRetrieve": json.dumps(
+                    ["article", "name", "brand", "price", f"storeData.{store_id}"]
+                ),
             }
         )
         response = await self._request(

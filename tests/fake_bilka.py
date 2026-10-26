@@ -189,6 +189,25 @@ class FakeBilka:
             if store in hit["isInAssortmentIn"]
             and all(word in f"{hit['name']} {hit['brand']}".casefold() for word in words)
         ][: int(query.get("hitsPerPage", 20))]
+        attributes = json.loads(query.get("attributesToRetrieve", "[]"))
+        hits = [retrieve(hit, attributes) for hit in hits]
         return httpx.Response(
             200, json={"results": [{"hits": hits, "nbHits": len(hits), "index": ALGOLIA_INDEX}]}
         )
+
+
+def retrieve(hit: dict[str, Any], attributes: list[str]) -> dict[str, Any]:
+    """The real index returns only objectID unless attributesToRetrieve names more."""
+    if "*" in attributes:
+        return hit
+    picked: dict[str, Any] = {"objectID": hit["objectID"]}
+    for attribute in attributes:
+        name, _, key = attribute.partition(".")
+        if name not in hit:
+            continue
+        if key:
+            if key in hit[name]:
+                picked.setdefault(name, {})[key] = hit[name][key]
+        else:
+            picked[name] = hit[name]
+    return picked
