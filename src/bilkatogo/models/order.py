@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from enum import StrEnum
@@ -116,3 +117,23 @@ def _ordered_at(ordered: dict[str, Any] | None) -> datetime | None:
         return datetime.fromisoformat(f"{ordered['date']}T{ordered.get('time') or '00:00:00'}")
     except KeyError, TypeError, ValueError:
         return None
+
+
+FINISHED_STATUSES = frozenset(
+    {OrderStatus.PICKED_UP, OrderStatus.NOT_COLLECTED, OrderStatus.CANCELLED, OrderStatus.SOLD_OUT}
+)
+
+
+def current_order(orders: Iterable[Order]) -> Order | None:
+    history = list(orders)
+    unfinished = [order for order in history if order.status not in FINISHED_STATUSES]
+    if unfinished:
+        return min(unfinished, key=lambda order: _slot_start(order, datetime.max))
+    if not history:
+        return None
+    return max(history, key=lambda order: _slot_start(order, datetime.min))
+
+
+def _slot_start(order: Order, missing: datetime) -> datetime:
+    slot = order.pickup_slot
+    return datetime.combine(slot.date, slot.start) if slot else missing

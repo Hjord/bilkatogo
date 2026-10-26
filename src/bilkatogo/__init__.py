@@ -16,6 +16,7 @@ from .models import (
     PickupPoint,
     PickupSlot,
     Substitution,
+    current_order,
 )
 from .token_storage import FileTokenStorage, TokenStorage
 
@@ -41,4 +42,5 @@ __all__ = [
     "TokenStorage",
     "UnexpectedResponseError",
     "__version__",
+    "current_order",
 ]

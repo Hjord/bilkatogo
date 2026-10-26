@@ -211,28 +211,39 @@ def format_status(status: OrderStatus) -> str:
     return status.name.replace("_", " ").title()
 
 
-OrderNumberArgument = Annotated[str, typer.Argument(help="Order Number, e.g. 900000000001.")]
+OrderNumberArgument = Annotated[
+    str | None,
+    typer.Argument(help="Order Number, e.g. 900000000001. Defaults to the Current Order."),
+]
 
 
 @app.command()
 @run_async
 async def order(
     ctx: typer.Context,
-    order_number: OrderNumberArgument,
+    order_number: OrderNumberArgument = None,
     email: EmailOption = None,
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Show one Order with its Pickup Code and Substitutions."""
-    details = await with_session(
-        ctx,
-        email,
-        password,
-        lambda client: client.get_order(order_number),
-        f"order {order_number}",
-    )
+    """Show one Order, or the Current Order, with its Pickup Code and Substitutions."""
+    if order_number is None:
+        details = await with_session(
+            ctx, email, password, lambda client: client.get_current_order(), "the current order"
+        )
+    else:
+        details = await with_session(
+            ctx,
+            email,
+            password,
+            lambda client: client.get_order(order_number),
+            f"order {order_number}",
+        )
     if as_json:
         typer.echo(to_json(details))
+        return
+    if details is None:
+        typer.echo("No orders.")
         return
     fields = [
         ("Order", details.order_number),
