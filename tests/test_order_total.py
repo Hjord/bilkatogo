@@ -5,7 +5,7 @@ import pytest
 from bilkatogo import BilkaToGoClient, OrderDetails
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
-CAPTURED = "900000000003"
+CAPTURED = "900000000004"
 
 
 async def fetch(bilka: FakeBilka, order_number: str) -> OrderDetails:

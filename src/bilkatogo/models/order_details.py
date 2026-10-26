@@ -1,3 +1,4 @@
+import json
 import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -51,6 +52,31 @@ class Substitution(BilkaDataClass):
 
 
 @dataclass
+class MissingItem(BilkaDataClass):
+    product: str
+    article_number: str
+    ordered_quantity: int
+    missing_quantity: int
+    _raw: dict[str, Any] | None = field(default=None, repr=False)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> MissingItem | None:
+        if not data.get("unavailable_reason") or data.get("replacement") or data.get("children"):
+            return None
+        if Substitution.from_dict(data) is not None:
+            return None
+        ordered = int(data.get("quantity") or 0)
+        missing = _quantity(data.get("unavailable_quantity"))
+        return cls(
+            _raw=data,
+            product=_product_name(data),
+            article_number=str((data.get("product") or {}).get("objectID") or ""),
+            ordered_quantity=ordered,
+            missing_quantity=missing if 0 < missing < ordered else ordered,
+        )
+
+
+@dataclass
 class OrderLine(BilkaDataClass):
     category: str
     product_id: int | None
@@ -94,6 +120,7 @@ class OrderDetails(BilkaDataClass):
     discount: Decimal
     lines: list[OrderLine]
     substitutions: list[Substitution]
+    missing_items: list[MissingItem]
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
@@ -112,10 +139,11 @@ class OrderDetails(BilkaDataClass):
         for line in lines:
             if line.unavailable_reason and not line.substituted:
                 _LOGGER.warning(
-                    "Order %s: %s is unavailable (%s) and not substituted",
+                    "Order %s: %s is unavailable (%s) and not substituted: %s",
                     order_number,
                     line.name,
                     line.unavailable_reason,
+                    json.dumps(line._raw, ensure_ascii=False, default=str),
                 )
         return cls(
             _raw=data,
@@ -142,8 +170,18 @@ class OrderDetails(BilkaDataClass):
                 for _, line in raw_lines
                 if (substitution := Substitution.from_dict(line)) is not None
             ],
+            missing_items=[
+                item for _, line in raw_lines if (item := MissingItem.from_dict(line)) is not None
+            ],
         )
 
 
 def _product_name(data: dict[str, Any]) -> str:
     return (data.get("product") or {}).get("name") or ""
+
+
+def _quantity(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except TypeError, ValueError:
+        return 0

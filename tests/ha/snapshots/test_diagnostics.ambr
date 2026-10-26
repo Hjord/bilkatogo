@@ -207,6 +207,8 @@
             'unavailable_reason': '',
           }),
         ]),
+        'missing_items': list([
+        ]),
         'order_number': '900000000001',
         'ordered_total': dict({
           '__type': "<class 'decimal.Decimal'>",

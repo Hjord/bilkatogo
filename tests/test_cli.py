@@ -180,6 +180,7 @@ def test_orders_json_output(invoke) -> None:
             "address": "Testvej 1",
             "zip_code": "9999",
             "city": "Eksempelby",
+            "store_id": None,
         },
         "home_delivery": False,
         "delivered": False,
@@ -281,12 +282,13 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Substitutions",
         "  Æbler -> 4 x Pærer",
         "  Letmælk -> 3 x Minimælk",
+        "Missing Items none",
     ]
     assert len(bilka.calls("gigya_login")) == 1
 
 
 def test_order_shows_the_order_total_breakdown(invoke) -> None:
-    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD)
+    result = invoke("order", "900000000004", "--email", EMAIL, "--password", PASSWORD)
 
     assert result.exit_code == 0, result.output
     lines = result.output.splitlines()
@@ -299,6 +301,7 @@ def test_order_shows_the_order_total_breakdown(invoke) -> None:
         "Delivery Fee  0.00 kr",
         "Discount      0.00 kr",
         "Substitutions none",
+        "Missing Items none",
     ]
 
 
@@ -314,7 +317,7 @@ ORDER_TOTAL_KEYS = (
 
 
 def test_order_json_includes_the_order_total_breakdown(invoke) -> None:
-    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD, "--json")
+    result = invoke("order", "900000000004", "--email", EMAIL, "--password", PASSWORD, "--json")
 
     assert result.exit_code == 0, result.output
     details = json.loads(result.output)
@@ -334,7 +337,40 @@ def test_order_without_substitutions_says_so(invoke) -> None:
 
     assert result.exit_code == 0, result.output
     assert "Pickup Code   87654321" in result.output
-    assert result.output.splitlines()[-1] == "Substitutions none"
+    assert "Substitutions none" in result.output.splitlines()
+
+
+def test_order_lists_missing_items_after_substitutions(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[-5:] == [
+        "Substitutions",
+        "  Letmælk -> 3 x Minimælk",
+        "Missing Items",
+        "  Skyr: 2 of 4 missing",
+        "  Havregryn: 1 of 1 missing",
+    ]
+
+
+def test_order_json_includes_missing_items(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["missing_items"] == [
+        {
+            "product": "Skyr",
+            "article_number": "932058",
+            "ordered_quantity": 4,
+            "missing_quantity": 2,
+        },
+        {
+            "product": "Havregryn",
+            "article_number": "1006",
+            "ordered_quantity": 1,
+            "missing_quantity": 1,
+        },
+    ]
 
 
 def test_order_json_output(invoke) -> None:
@@ -397,6 +433,38 @@ def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> 
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) is None
+
+
+def test_pickup_points_table_marks_the_carts_pickup_point(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0].split() == ["Pickup", "Point", "Address", "Store"]
+    assert len(lines) == 23
+    [chosen] = [line for line in lines if line.startswith("*")]
+    assert chosen.split()[1:4] == ["Bilka", "Waves,", "Hundige"]
+    assert chosen.split()[-1] == "1653"
+    [fredericia] = [line for line in lines if "Pickup Fredericia" in line]
+    assert "Strandvejen 220, 7000 Fredericia" in fredericia
+    assert fredericia.split()[-1] == "1662"
+
+
+def test_pickup_points_json(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    points = json.loads(result.output)
+    assert len(points) == 22
+    assert points[1] == {
+        "name": "Pickup Fredericia",
+        "address": "Strandvejen 220",
+        "zip_code": "7000",
+        "city": "Fredericia",
+        "store_id": "1662",
+        "chosen": False,
+    }
+    assert [point["name"] for point in points if point["chosen"]] == ["Bilka Waves, Hundige"]
 
 
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(

@@ -73,16 +73,27 @@ class PickupPoint(BilkaDataClass):
     address: str
     zip_code: str
     city: str
+    store_id: str | None = None
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PickupPoint:
+        if "location" in data:
+            return cls(
+                _raw=data,
+                name=data.get("location") or "",
+                address=data.get("address") or "",
+                zip_code=str(data.get("zipCode") or ""),
+                city=data.get("city") or "",
+            )
+        sid = data.get("sid")
         return cls(
             _raw=data,
-            name=data.get("location") or "",
-            address=data.get("address") or "",
-            zip_code=str(data.get("zipCode") or ""),
+            name=(data.get("name") or "").strip(),
+            address=(data.get("street") or "").strip(),
+            zip_code=str(data.get("zip") or ""),
             city=data.get("city") or "",
+            store_id=str(sid) if sid else None,
         )
 
 

@@ -7,6 +7,7 @@ import httpx
 from .const import (
     API_BASE_URL,
     API_HOST,
+    CART_PARAMS,
     CURRENT_ORDER_SCAN_LIMIT,
     GIGYA_API_KEY,
     GIGYA_BASE_URL,
@@ -22,8 +23,9 @@ from .exceptions import (
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
+    UnknownPickupPointError,
 )
-from .models import Order, OrderDetails, current_order
+from .models import Order, OrderDetails, PickupPoint, current_order
 from .token_storage import TokenStorage
 
 
@@ -119,6 +121,22 @@ class BilkaToGoClient:
     async def _find_order(self, order_number: str) -> Order | None:
         orders = await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT)
         return next((order for order in orders if order.order_number == order_number), None)
+
+    async def get_pickup_points(self) -> list[PickupPoint]:
+        data = await self._shop("GET", "shop/v6/AvailableDeliveryAddresses", {"orderByZipcode": 1})
+        return [PickupPoint.from_dict(address) for address in data.get("addresses") or []]
+
+    async def get_pickup_point(self, name: str) -> PickupPoint:
+        wanted = name.strip().casefold()
+        for point in await self.get_pickup_points():
+            if point.name.casefold() == wanted:
+                return point
+        raise UnknownPickupPointError(name)
+
+    async def get_cart_pickup_point(self) -> PickupPoint | None:
+        data = await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
+        address = data.get("deliveryAddress")
+        return PickupPoint.from_dict(address) if address else None
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()

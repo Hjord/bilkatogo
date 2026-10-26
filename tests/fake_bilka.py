@@ -19,6 +19,11 @@ ROUTES: dict[tuple[str, str], str] = {
     ("POST", "https://api.bilkatogo.dk/api/auth/LoginJWT"): "login_jwt",
     ("POST", "https://api.bilkatogo.dk/api/shop/v7/OrderHistory"): "order_history",
     ("GET", "https://api.bilkatogo.dk/api/shop/v7/OrderDetails"): "order_details",
+    (
+        "GET",
+        "https://api.bilkatogo.dk/api/shop/v6/AvailableDeliveryAddresses",
+    ): "available_delivery_addresses",
+    ("GET", "https://api.bilkatogo.dk/api/shop/v6/Cart"): "cart",
 }
 
 type Handler = Callable[[httpx.Request], httpx.Response]
@@ -53,10 +58,13 @@ class FakeBilka:
                 [
                     "order_details_substituted.json",
                     "order_details_plain.json",
+                    "order_details_missing.json",
                     "order_details_captured.json",
                 ],
             )
         }
+        self.delivery_addresses: dict[str, Any] = load_fixture("available_delivery_addresses.json")
+        self.cart_contents: dict[str, Any] = load_fixture("cart.json")
         self._scripts: dict[str, deque[Scripted]] = defaultdict(deque)
         self.transport = httpx.MockTransport(self._handle)
 
@@ -137,3 +145,13 @@ class FakeBilka:
         if details is None:
             return httpx.Response(404, json={"code": 404, "msg": "Not found"})
         return httpx.Response(200, json=details)
+
+    def available_delivery_addresses(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        return httpx.Response(200, json=self.delivery_addresses)
+
+    def cart(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        return httpx.Response(200, json=self.cart_contents)

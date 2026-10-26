@@ -233,7 +233,7 @@ async def order(
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Show one Order, or the Current Order, with its Pickup Code, Order Total and Substitutions."""
+    """Show an Order (default: the Current Order), its Order Total and what packing changed."""
     if order_number is None:
         details = await with_session(
             ctx, email, password, lambda client: client.get_current_order(), "the current order"
@@ -268,15 +268,64 @@ async def order(
     ]
     for label, value in fields:
         typer.echo(f"{label:<13} {value}")
-    if not details.substitutions:
-        typer.echo("Substitutions none")
-        return
-    typer.echo("Substitutions")
-    for substitution in details.substitutions:
-        typer.echo(
-            f"  {substitution.original_product} -> "
+    print_list(
+        "Substitutions",
+        [
+            f"{substitution.original_product} -> "
             f"{substitution.quantity} x {substitution.replacement_product}"
+            for substitution in details.substitutions
+        ],
+    )
+    print_list(
+        "Missing Items",
+        [
+            f"{item.product}: {item.missing_quantity} of {item.ordered_quantity} missing"
+            for item in details.missing_items
+        ],
+    )
+
+
+def print_list(label: str, entries: list[str]) -> None:
+    if not entries:
+        typer.echo(f"{label} none")
+        return
+    typer.echo(label)
+    for entry in entries:
+        typer.echo(f"  {entry}")
+
+
+@app.command("pickup-points")
+@run_async
+async def pickup_points(
+    ctx: typer.Context,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show every Pickup Point with its Store, marking the one chosen in your Cart."""
+
+    async def fetch(client: BilkaToGoClient) -> tuple[list[PickupPoint], PickupPoint | None]:
+        return await client.get_pickup_points(), await client.get_cart_pickup_point()
+
+    points, chosen = await with_session(ctx, email, password, fetch, "pickup points")
+    chosen_name = chosen.name if chosen else None
+    if as_json:
+        typer.echo(
+            to_json([{**dict(point), "chosen": point.name == chosen_name} for point in points])
         )
+        return
+    print_table(
+        ["", "Pickup Point", "Address", "Store"],
+        [
+            [
+                "*" if point.name == chosen_name else "",
+                point.name,
+                f"{point.address}, {point.zip_code} {point.city}",
+                point.store_id or "",
+            ]
+            for point in points
+        ],
+    )
 
 
 def main() -> None:

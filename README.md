@@ -42,6 +42,7 @@ bilkatogo login                 # log in and store the session
 bilkatogo orders --limit 10     # list your most recent orders
 bilkatogo order                 # show the Current Order with its details
 bilkatogo order 900000000001    # show one order by Order Number
+bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
 ```
 
 Every command accepts `--json` for machine-readable output.
