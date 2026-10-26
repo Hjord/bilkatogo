@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Log ind med den e-mail og adgangskode, du bruger på bilkatogo.dk.",
+        "data": {
+          "email": "E-mail",
+          "password": "Adgangskode"
+        },
+        "data_description": {
+          "email": "E-mailadressen på din BilkaToGo-konto.",
+          "password": "Adgangskoden til din BilkaToGo-konto."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Forkert e-mail eller adgangskode.",
+      "cannot_connect": "Kunne ikke få forbindelse til Bilka. Prøv igen senere.",
+      "unknown": "Bilka svarede uventet. Prøv igen senere."
+    },
+    "abort": {
+      "already_configured": "Denne BilkaToGo-konto er allerede tilføjet."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "order_status": {
+        "name": "Ordrestatus",
+        "state": {
+          "processing": "Ubehandlet",
+          "received": "Modtaget",
+          "packed": "Pakket",
+          "picked_up": "Afhentet og faktureret",
+          "not_collected": "Uafhentet",
+          "cancelled": "Annulleret",
+          "sold_out": "Fuldt udsolgt",
+          "unknown": "Ukendt"
+        },
+        "state_attributes": {
+          "status_code": {
+            "name": "Bilka-statuskode"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "update_failed": {
+      "message": "Kunne ikke hente ordrer fra Bilka: {error}"
+    }
+  }
+}

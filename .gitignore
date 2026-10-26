@@ -11,3 +11,4 @@ htmlcov/
 .env
 .worktrees/
 .claude/worktrees/
+.venv-ha/
