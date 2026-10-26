@@ -23,7 +23,7 @@ from .exceptions import (
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import Order, OrderDetails, current_order
+from .models import Order, OrderDetails, PickupPoint, current_order
 from .token_storage import TokenStorage
 
 
@@ -111,6 +111,10 @@ class BilkaToGoClient:
     async def get_current_order(self) -> OrderDetails | None:
         order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
         return await self.get_order(order.order_number) if order else None
+
+    async def get_pickup_points(self) -> list[PickupPoint]:
+        data = await self._shop("GET", "shop/v6/AvailableDeliveryAddresses", {"orderByZipcode": 1})
+        return [PickupPoint.from_dict(address) for address in data.get("addresses") or []]
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()

@@ -180,6 +180,7 @@ def test_orders_json_output(invoke) -> None:
             "address": "Testvej 1",
             "zip_code": "9999",
             "city": "Eksempelby",
+            "store_id": None,
         },
         "home_delivery": False,
         "delivered": False,
