@@ -1,0 +1,9 @@
+{
+  "entity": {
+    "sensor": {
+      "order_status": {
+        "default": "mdi:basket"
+      }
+    }
+  }
+}

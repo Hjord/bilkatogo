@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Sign in with the email and password you use on bilkatogo.dk.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "data_description": {
+          "email": "The email address of your BilkaToGo account.",
+          "password": "The password of your BilkaToGo account."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Wrong email or password.",
+      "cannot_connect": "Could not reach Bilka. Try again later.",
+      "unknown": "Bilka answered unexpectedly. Try again later."
+    },
+    "abort": {
+      "already_configured": "This BilkaToGo account is already added."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "order_status": {
+        "name": "Order status",
+        "state": {
+          "processing": "Processing",
+          "received": "Received",
+          "packed": "Packed",
+          "picked_up": "Picked up",
+          "not_collected": "Not collected",
+          "cancelled": "Cancelled",
+          "sold_out": "Sold out",
+          "unknown": "Unknown"
+        },
+        "state_attributes": {
+          "status_code": {
+            "name": "Bilka status code"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "update_failed": {
+      "message": "Could not fetch orders from Bilka: {error}"
+    }
+  }
+}
