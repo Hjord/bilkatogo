@@ -38,6 +38,24 @@ async def test_unauthorized_shop_call_logs_in_again_and_retries_once(
 
 
 @pytest.mark.asyncio
+async def test_unauthorized_order_details_logs_in_again_and_retries_once(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+    bilka.script("order_details", UNAUTHORIZED)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        details = await client.get_order("900000000001")
+
+    assert details.order_number == "900000000001"
+    assert len(bilka.calls("order_details")) == 2
+    assert len(bilka.calls("gigya_login")) == 2
+
+
+@pytest.mark.asyncio
 async def test_unauthorized_again_after_a_fresh_login_raises_instead_of_looping(
     bilka: FakeBilka, storage: MemoryTokenStorage
 ) -> None:
