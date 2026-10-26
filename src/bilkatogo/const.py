@@ -15,3 +15,9 @@ ORDER_HISTORY_PARAMS = {"muah": 1, "ordertype": "dibs,pgw"}
 CART_PARAMS = {"extra": "deliveryAddress,deliveryDate"}
 CURRENT_ORDER_SCAN_LIMIT = 20
 BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
+
+ALGOLIA_APP_ID = "F9VBJLR1BK"
+ALGOLIA_SEARCH_KEY = "1deaf41c87e729779f7695c00f190cc9"
+ALGOLIA_QUERIES_URL = f"https://{ALGOLIA_APP_ID.lower()}-dsn.algolia.net/1/indexes/*/queries"
+ALGOLIA_PRODUCT_INDEX = "prod_BILKATOGO_PRODUCTS"
+SEARCH_LIMIT = 20

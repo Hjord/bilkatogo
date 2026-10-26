@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 from bilkatogo import FileTokenStorage
 from bilkatogo.cli import app
-from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, form
+from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, algolia_query, form
 
 
 @pytest.fixture
@@ -465,6 +465,118 @@ def test_pickup_points_json(invoke) -> None:
         "chosen": False,
     }
     assert [point["name"] for point in points if point["chosen"]] == ["Bilka Waves, Hundige"]
+
+
+def search_rows(output: str) -> dict[str, str]:
+    return {line.split()[0]: line for line in output.splitlines()[1:]}
+
+
+def test_search_lists_products_with_price_stock_and_offer(invoke) -> None:
+    result = invoke("search", "e", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    header, *_ = result.output.splitlines()
+    assert header.split() == [
+        "Article",
+        "Product",
+        "Brand",
+        "Price",
+        "Unit",
+        "Price",
+        "Stock",
+        "Offer",
+    ]
+    rows = search_rows(result.output)
+    assert list(rows) == ["17924601", "10604691", "89300500105", "10818787", "11100367"]
+    assert "Cheasy" in rows["17924601"]
+    assert "30.95 kr  30.95 kr/kg  In stock" in rows["17924601"]
+    assert rows["10604691"].rstrip().endswith("Skarp pris: 25.00 kr")
+    assert rows["89300500105"].rstrip().endswith("Mix 10 for 25,00")
+    assert "Out of stock" in rows["10818787"]
+    assert rows["11100367"].rstrip().endswith("Spar 4,95: 60.00 kr until 2026-10-29")
+    assert "64.95 kr  99.92 kr/kg  Out of stock" in rows["11100367"]
+
+
+def test_search_pickup_point_and_limit(invoke, bilka: FakeBilka) -> None:
+    result = invoke(
+        "search",
+        "skyr",
+        "--pickup-point",
+        "Bilka Vejle",
+        "--limit",
+        "1",
+        "--email",
+        EMAIL,
+        "--password",
+        PASSWORD,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert list(search_rows(result.output)) == ["17924601"]
+    query = algolia_query(bilka.calls("algolia")[0])
+    assert query["filters"] == "isInAssortmentIn:1661 AND nonsearchable:false"
+    assert query["hitsPerPage"] == "1"
+
+
+def test_search_shows_the_limit_per_customer(invoke, bilka: FakeBilka) -> None:
+    bilka.products[1]["storeData"]["1653"]["offerMax"] = 3
+
+    result = invoke("search", "skyr", "--email", EMAIL, "--password", PASSWORD)
+
+    assert (
+        search_rows(result.output)["10604691"]
+        .rstrip()
+        .endswith("Skarp pris: 25.00 kr, max 3 per customer")
+    )
+
+
+def test_search_without_matches(invoke) -> None:
+    result = invoke("search", "lakrids", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == "No products."
+
+
+def test_search_at_an_unknown_pickup_point_fails_clearly(invoke) -> None:
+    result = invoke(
+        "search",
+        "skyr",
+        "--pickup-point",
+        "Bilka Atlantis",
+        "--email",
+        EMAIL,
+        "--password",
+        PASSWORD,
+    )
+
+    assert result.exit_code == 1
+    assert "Unknown Pickup Point 'Bilka Atlantis'" in result.output
+
+
+def test_search_json(invoke) -> None:
+    result = invoke("search", "skyr", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    plain, offered = json.loads(result.output)
+    assert plain["offer"] is None
+    assert offered == {
+        "article_number": "10604691",
+        "name": "Skyr m. vanilje 0,2 % fedt øko",
+        "brand": "Salling ØKO",
+        "store_id": "1653",
+        "price": "39.31",
+        "unit_price": "49.14",
+        "unit": "kg",
+        "in_stock": True,
+        "offer": {
+            "label": "Skarp pris",
+            "price": "25.00",
+            "unit_price": "31.25",
+            "ends": None,
+            "limit_per_customer": None,
+        },
+        "multibuy_offer": None,
+    }
 
 
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(

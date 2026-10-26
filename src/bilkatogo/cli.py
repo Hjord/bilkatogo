@@ -12,13 +12,14 @@ import typer
 
 from . import config
 from .client import BilkaToGoClient
+from .const import SEARCH_LIMIT
 from .exceptions import (
     BilkaToGoError,
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import BilkaDataClass, Order, OrderStatus, PickupPoint, PickupSlot
+from .models import BilkaDataClass, Offer, Order, OrderStatus, PickupPoint, PickupSlot, Product
 from .token_storage import FileTokenStorage
 
 app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
@@ -326,6 +327,71 @@ async def pickup_points(
             for point in points
         ],
     )
+
+
+SearchTextArgument = Annotated[str, typer.Argument(help="What to search for, e.g. skyr.")]
+PickupPointOption = Annotated[
+    str | None,
+    typer.Option(
+        "--pickup-point",
+        help="Search at this Pickup Point's Store. Defaults to the Pickup Point in your Cart.",
+    ),
+]
+SearchLimitOption = Annotated[
+    int, typer.Option("--limit", min=1, help="Number of Products to show.")
+]
+
+
+@app.command()
+@run_async
+async def search(
+    ctx: typer.Context,
+    text: SearchTextArgument,
+    pickup_point: PickupPointOption = None,
+    limit: SearchLimitOption = SEARCH_LIMIT,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Search Products with their Price, stock and Offer at a Store."""
+    found = await with_session(
+        ctx,
+        email,
+        password,
+        lambda client: client.search(text, pickup_point=pickup_point, limit=limit),
+        "products",
+    )
+    if as_json:
+        typer.echo(to_json(found))
+    elif not found:
+        typer.echo("No products.")
+    else:
+        print_table(
+            ["Article", "Product", "Brand", "Price", "Unit Price", "Stock", "Offer"],
+            [product_row(product) for product in found],
+        )
+
+
+def product_row(product: Product) -> list[str]:
+    unit_price = f"{format_amount(product.unit_price)}/{product.unit}" if product.unit else ""
+    return [
+        product.article_number,
+        product.name,
+        product.brand,
+        format_amount(product.price),
+        unit_price,
+        "In stock" if product.in_stock else "Out of stock",
+        format_offer(product.offer) if product.offer else product.multibuy_offer or "",
+    ]
+
+
+def format_offer(offer: Offer) -> str:
+    text = f"{offer.label}: {format_amount(offer.price)}"
+    if offer.ends:
+        text += f" until {offer.ends.isoformat()}"
+    if offer.limit_per_customer:
+        text += f", max {offer.limit_per_customer} per customer"
+    return text
 
 
 def main() -> None:

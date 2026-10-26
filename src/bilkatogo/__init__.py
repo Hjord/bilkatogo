@@ -12,6 +12,7 @@ from .exceptions import (
 from .models import (
     FINISHED_STATUSES,
     MissingItem,
+    Offer,
     Order,
     OrderDetails,
     OrderLine,
@@ -19,6 +20,7 @@ from .models import (
     PickupCode,
     PickupPoint,
     PickupSlot,
+    Product,
     Substitution,
     current_order,
 )
@@ -38,6 +40,7 @@ __all__ = [
     "FileTokenStorage",
     "InvalidCredentialsError",
     "MissingItem",
+    "Offer",
     "Order",
     "OrderDetails",
     "OrderLine",
@@ -45,6 +48,7 @@ __all__ = [
     "PickupCode",
     "PickupPoint",
     "PickupSlot",
+    "Product",
     "Substitution",
     "TokenStorage",
     "UnexpectedResponseError",
