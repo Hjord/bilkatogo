@@ -726,6 +726,27 @@ def test_there_is_no_cart_clear_command(invoke, logged_in_cart: FakeBilka) -> No
     assert logged_in_cart.calls("empty_cart") == []
 
 
+@pytest.mark.parametrize(
+    ("group_options", "message"),
+    [
+        (["--raw"], "--raw only works without a subcommand, not with cart add."),
+        (["--redact"], "--redact only works without a subcommand, not with cart add."),
+        (["--raw", "--redact"], "--raw only works without a subcommand, not with cart add."),
+        (["--json"], "Put --json after the subcommand: cart add --json."),
+    ],
+)
+def test_cart_output_options_before_a_subcommand_are_an_error(
+    invoke, logged_in_cart: FakeBilka, group_options: list[str], message: str
+) -> None:
+    result = invoke(
+        "cart", *group_options, "add", "18364", "--email", EMAIL, "--password", PASSWORD
+    )
+
+    assert result.exit_code == 1
+    assert message in result.output
+    assert logged_in_cart.requests == []
+
+
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

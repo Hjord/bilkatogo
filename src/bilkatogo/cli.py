@@ -444,6 +444,7 @@ async def cart(
 ) -> None:
     """Show your Cart: its Cart Lines, the Cart total and your Pickup Point."""
     if ctx.invoked_subcommand is not None:
+        check_no_cart_output_options(ctx.invoked_subcommand, as_json, raw, redact)
         return
     check_redact(raw, redact)
     if raw:
@@ -457,6 +458,14 @@ async def cart(
         typer.echo(to_json(found))
         return
     print_cart(found)
+
+
+def check_no_cart_output_options(subcommand: str, as_json: bool, raw: bool, redact: bool) -> None:
+    for option, given in (("--raw", raw), ("--redact", redact)):
+        if given:
+            raise fail(f"{option} only works without a subcommand, not with cart {subcommand}.")
+    if as_json:
+        raise fail(f"Put --json after the subcommand: cart {subcommand} --json.")
 
 
 ArticleArgument = Annotated[str, typer.Argument(help="Article Number, e.g. 18381.")]
