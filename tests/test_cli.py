@@ -579,6 +579,59 @@ def test_search_json(invoke) -> None:
     }
 
 
+def test_cart_prints_cart_lines_total_and_pickup_point(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0].split() == ["Article", "Product", "Quantity", "Price", "Line", "Total"]
+    bananas = lines[1].split()
+    assert bananas[:2] == ["18381", "Bananer"]
+    assert bananas[2:] == ["10", "2.75", "kr", "25.00", "kr"]
+    assert len(lines) == 1 + 5 + 6
+    assert lines[6:] == [
+        "Pickup Point Bilka Vejle",
+        "Cart Total   127.00 kr",
+        "Deposit      0.00 kr",
+        "Service Fee  39.00 kr",
+        "Packaging    0.00 kr",
+        "Discount     9.50 kr",
+    ]
+
+
+def test_empty_cart_says_so(invoke) -> None:
+    result = invoke("cart", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0] == "No Cart Lines."
+    assert lines[1] == "Pickup Point Bilka Waves, Hundige"
+
+
+def test_cart_json(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    cart = json.loads(result.output)
+    assert cart["lines"][0] == {
+        "product": "Bananer",
+        "article_number": "18381",
+        "quantity": 10,
+        "price": "2.75",
+        "line_total": "25.00",
+    }
+    assert len(cart["lines"]) == 5
+    assert {key: cart[key] for key in ("total", "deposit", "service_fee", "packaging")} == {
+        "total": "127.00",
+        "deposit": "0.00",
+        "service_fee": "39.00",
+        "packaging": "0.00",
+    }
+    assert cart["discount"] == "9.50"
+    assert cart["pickup_point"]["name"] == "Bilka Vejle"
+    assert cart["pickup_point"]["store_id"] == "1661"
+
+
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -394,5 +394,46 @@ def format_offer(offer: Offer) -> str:
     return text
 
 
+@app.command()
+@run_async
+async def cart(
+    ctx: typer.Context,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show your Cart: its Cart Lines, the Cart total and your Pickup Point."""
+    found = await with_session(ctx, email, password, lambda client: client.get_cart(), "the cart")
+    if as_json:
+        typer.echo(to_json(found))
+        return
+    if found.lines:
+        print_table(
+            ["Article", "Product", "Quantity", "Price", "Line Total"],
+            [
+                [
+                    line.article_number,
+                    line.product,
+                    str(line.quantity),
+                    format_amount(line.price),
+                    format_amount(line.line_total),
+                ]
+                for line in found.lines
+            ],
+        )
+    else:
+        typer.echo("No Cart Lines.")
+    fields = [
+        ("Pickup Point", found.pickup_point.name if found.pickup_point else ""),
+        ("Cart Total", format_amount(found.total)),
+        ("Deposit", format_amount(found.deposit)),
+        ("Service Fee", format_amount(found.service_fee)),
+        ("Packaging", format_amount(found.packaging)),
+        ("Discount", format_amount(found.discount)),
+    ]
+    for label, value in fields:
+        typer.echo(f"{label:<12} {value}")
+
+
 def main() -> None:
     app()

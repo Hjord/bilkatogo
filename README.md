@@ -94,6 +94,7 @@ bilkatogo order 900000000001    # show one order by Order Number
 bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
 bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
 bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
+bilkatogo cart                  # your Cart Lines, the Cart total and your Pickup Point
 ```
 
 Every command accepts `--json` for machine-readable output.
