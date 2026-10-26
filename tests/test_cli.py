@@ -276,3 +276,32 @@ def test_order_that_does_not_exist_fails_clearly(invoke) -> None:
 
     assert result.exit_code == 1
     assert "Could not fetch order 900000000099" in result.output
+
+
+def test_order_without_a_number_prints_the_current_order(invoke, bilka: FakeBilka) -> None:
+    result = invoke("order", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[:3] == [
+        "Order         900000000002",
+        "Status        Received",
+        "Pickup Slot   Tue 03/11 16:00-18:00",
+    ]
+
+
+def test_order_without_a_number_and_no_orders(invoke, bilka: FakeBilka) -> None:
+    bilka.orders = []
+
+    result = invoke("order", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == "No orders."
+
+
+def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> None:
+    bilka.orders = []
+
+    result = invoke("order", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) is None
