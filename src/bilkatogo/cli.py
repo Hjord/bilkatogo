@@ -32,6 +32,7 @@ PasswordOption = Annotated[
     typer.Option("--password", envvar="BILKATOGO_PASSWORD", help="BilkaToGo account password."),
 ]
 JsonOption = Annotated[bool, typer.Option("--json", help="Output JSON.")]
+RawOption = Annotated[bool, typer.Option("--raw", help="Print Bilka's JSON as received.")]
 
 
 def run_async[**P, R](func: Callable[P, Coroutine[Any, Any, R]]) -> Callable[P, R]:
@@ -68,6 +69,10 @@ def to_json(data: Any) -> str:
         raise TypeError(f"Cannot serialise {type(obj).__name__}")
 
     return json.dumps(data, default=default, ensure_ascii=False)
+
+
+def print_raw(data: dict[str, Any] | None) -> None:
+    typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 
 def print_table(headers: list[str], rows: list[list[str]]) -> None:
@@ -233,8 +238,28 @@ async def order(
     email: EmailOption = None,
     password: PasswordOption = None,
     as_json: JsonOption = False,
+    raw: RawOption = False,
 ) -> None:
     """Show an Order (default: the Current Order), its Order Total and what packing changed."""
+    if raw:
+        if order_number is None:
+            data = await with_session(
+                ctx,
+                email,
+                password,
+                lambda client: client.get_current_order_json(),
+                "the current order",
+            )
+        else:
+            data = await with_session(
+                ctx,
+                email,
+                password,
+                lambda client: client.get_order_json(order_number),
+                f"order {order_number}",
+            )
+        print_raw(data)
+        return
     if order_number is None:
         details = await with_session(
             ctx, email, password, lambda client: client.get_current_order(), "the current order"
@@ -401,8 +426,15 @@ async def cart(
     email: EmailOption = None,
     password: PasswordOption = None,
     as_json: JsonOption = False,
+    raw: RawOption = False,
 ) -> None:
     """Show your Cart: its Cart Lines, the Cart total and your Pickup Point."""
+    if raw:
+        data = await with_session(
+            ctx, email, password, lambda client: client.get_cart_json(), "the cart"
+        )
+        print_raw(data)
+        return
     found = await with_session(ctx, email, password, lambda client: client.get_cart(), "the cart")
     if as_json:
         typer.echo(to_json(found))

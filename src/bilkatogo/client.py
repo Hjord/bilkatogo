@@ -112,8 +112,7 @@ class BilkaToGoClient:
 
     async def get_order(self, order: str | Order) -> OrderDetails:
         order_number = order if isinstance(order, str) else order.order_number
-        data = await self._shop("GET", "shop/v7/OrderDetails", {"orderId": order_number})
-        details = data.get("order")
+        details = (await self.get_order_json(order_number)).get("order")
         if not details:
             raise BilkaToGoError(f"Order {order_number} was not found")
         summary = await self._find_order(order_number) if isinstance(order, str) else order
@@ -124,6 +123,14 @@ class BilkaToGoClient:
     async def get_current_order(self) -> OrderDetails | None:
         order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
         return await self.get_order(order) if order else None
+
+    async def get_order_json(self, order: str | Order) -> dict[str, Any]:
+        order_number = order if isinstance(order, str) else order.order_number
+        return await self._shop("GET", "shop/v7/OrderDetails", {"orderId": order_number})
+
+    async def get_current_order_json(self) -> dict[str, Any] | None:
+        order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
+        return await self.get_order_json(order) if order else None
 
     async def _find_order(self, order_number: str) -> Order | None:
         orders = await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT)
@@ -143,7 +150,10 @@ class BilkaToGoClient:
         raise UnknownPickupPointError(name)
 
     async def get_cart(self) -> Cart:
-        return Cart.from_dict(await self._shop("GET", "shop/v6/Cart", CART_PARAMS))
+        return Cart.from_dict(await self.get_cart_json())
+
+    async def get_cart_json(self) -> dict[str, Any]:
+        return await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
 
     async def get_cart_pickup_point(self) -> PickupPoint | None:
         return (await self.get_cart()).pickup_point
