@@ -265,5 +265,39 @@ async def order(
         )
 
 
+@app.command("pickup-points")
+@run_async
+async def pickup_points(
+    ctx: typer.Context,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show every Pickup Point with its Store, marking the one chosen in your Cart."""
+
+    async def fetch(client: BilkaToGoClient) -> tuple[list[PickupPoint], PickupPoint | None]:
+        return await client.get_pickup_points(), await client.get_cart_pickup_point()
+
+    points, chosen = await with_session(ctx, email, password, fetch, "pickup points")
+    chosen_name = chosen.name if chosen else None
+    if as_json:
+        typer.echo(
+            to_json([{**dict(point), "chosen": point.name == chosen_name} for point in points])
+        )
+        return
+    print_table(
+        ["", "Pickup Point", "Address", "Store"],
+        [
+            [
+                "*" if point.name == chosen_name else "",
+                point.name,
+                f"{point.address}, {point.zip_code} {point.city}",
+                point.store_id or "",
+            ]
+            for point in points
+        ],
+    )
+
+
 def main() -> None:
     app()

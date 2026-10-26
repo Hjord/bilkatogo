@@ -349,6 +349,38 @@ def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> 
     assert json.loads(result.output) is None
 
 
+def test_pickup_points_table_marks_the_carts_pickup_point(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines[0].split() == ["Pickup", "Point", "Address", "Store"]
+    assert len(lines) == 23
+    [chosen] = [line for line in lines if line.startswith("*")]
+    assert chosen.split()[1:4] == ["Bilka", "Waves,", "Hundige"]
+    assert chosen.split()[-1] == "1653"
+    [fredericia] = [line for line in lines if "Pickup Fredericia" in line]
+    assert "Strandvejen 220, 7000 Fredericia" in fredericia
+    assert fredericia.split()[-1] == "1662"
+
+
+def test_pickup_points_json(invoke) -> None:
+    result = invoke("pickup-points", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    points = json.loads(result.output)
+    assert len(points) == 22
+    assert points[1] == {
+        "name": "Pickup Fredericia",
+        "address": "Strandvejen 220",
+        "zip_code": "7000",
+        "city": "Fredericia",
+        "store_id": "1662",
+        "chosen": False,
+    }
+    assert [point["name"] for point in points if point["chosen"]] == ["Bilka Waves, Hundige"]
+
+
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
