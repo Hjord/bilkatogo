@@ -18,6 +18,7 @@ from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
+from .substitutions import substitution_data
 
 PARALLEL_UPDATES = 0
 
@@ -97,12 +98,7 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         attributes_fn=lambda data: (
             {
                 "substitutions": [
-                    {
-                        "original_product": substitution.original_product,
-                        "replacement_product": substitution.replacement_product,
-                        "quantity": substitution.quantity,
-                    }
-                    for substitution in data.details.substitutions
+                    substitution_data(substitution) for substitution in data.details.substitutions
                 ]
             }
             if data.details
