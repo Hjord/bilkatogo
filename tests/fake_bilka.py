@@ -7,6 +7,8 @@ from urllib.parse import parse_qs, parse_qsl
 
 import httpx
 
+from bilkatogo.models.cart import FEE_GROUPS
+
 FIXTURES = Path(__file__).parent / "fixtures"
 
 EMAIL = "kunde@example.com"
@@ -213,9 +215,7 @@ class FakeBilka:
         if not self.has_shop_session(request):
             return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
         self.cart_contents["lines"] = [
-            group
-            for group in self.cart_contents["lines"]
-            if group["headline"] in ("Emballage", "Services")
+            group for group in self.cart_contents["lines"] if group["headline"] in FEE_GROUPS
         ]
         return httpx.Response(200, json=self.cart_contents)
 
