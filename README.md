@@ -43,6 +43,8 @@ bilkatogo orders --limit 10     # list your most recent orders
 bilkatogo order                 # show the Current Order with its details
 bilkatogo order 900000000001    # show one order by Order Number
 bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
+bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
+bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
 ```
 
 Every command accepts `--json` for machine-readable output.
