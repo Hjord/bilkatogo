@@ -1,0 +1,74 @@
+[project]
+name = "bilkatogo"
+version = "0.1.0"
+description = "Async client and CLI for tracking BilkaToGo orders."
+readme = "README.md"
+authors = [
+    { name = "Nick Nissen", email = "nickknissen@gmail.com" }
+]
+license = "MIT"
+keywords = ["bilka", "bilkatogo", "danish", "groceries", "api", "async"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: AsyncIO",
+]
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+cli = ["typer>=0.27.3,<0.28"]
+
+[project.scripts]
+bilkatogo = "bilkatogo.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nickknissen/bilkatogo"
+Repository = "https://github.com/nickknissen/bilkatogo"
+Issues = "https://github.com/nickknissen/bilkatogo/issues"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+extend-exclude = [".worktrees", "*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "LOG"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["src/", "tests/"]
+
+[tool.ty.rules]
+division-by-zero = "warn"
+
+[[tool.ty.overrides]]
+include = ["tests/"]
+
+[tool.ty.overrides.rules]
+invalid-assignment = "ignore"
+
+[dependency-groups]
+dev = [
+    "bilkatogo[cli]",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.16.1",
+    "ty>=0.0.92",
+]
