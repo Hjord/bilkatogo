@@ -6,6 +6,7 @@ from bilkatogo import BilkaToGoClient
 
 from .const import PLATFORMS
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator
+from .missing_items import MissingItemAnnouncer
 from .substitutions import SubstitutionAnnouncer
 from .token_storage import HomeAssistantTokenStorage
 
@@ -31,3 +32,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) -
 async def async_remove_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) -> None:
     await HomeAssistantTokenStorage(hass, entry.entry_id).async_remove()
     await SubstitutionAnnouncer(hass, entry.entry_id).async_remove()
+    await MissingItemAnnouncer(hass, entry.entry_id).async_remove()

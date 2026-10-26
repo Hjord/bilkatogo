@@ -7,6 +7,9 @@
       "substitutions": {
         "default": "mdi:swap-horizontal"
       },
+      "missing_items": {
+        "default": "mdi:cart-remove"
+      },
       "pickup_slot": {
         "default": "mdi:clock-outline"
       },
