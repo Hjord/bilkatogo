@@ -48,7 +48,7 @@ def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     if order is None:
         return None
     price = order.packed_price or order.ordered_price
-    return {"order_number": order.order_number, "price": price / 100}
+    return {"order_number": order.order_number, "price": float(price)}
 
 
 def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
