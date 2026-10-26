@@ -17,6 +17,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("POST", "https://accounts.eu1.gigya.com/accounts.login"): "gigya_login",
     ("POST", "https://accounts.eu1.gigya.com/accounts.getJWT"): "gigya_jwt",
     ("POST", "https://api.bilkatogo.dk/api/auth/LoginJWT"): "login_jwt",
+    ("POST", "https://api.bilkatogo.dk/api/shop/v7/OrderHistory"): "order_history",
 }
 
 type Handler = Callable[[httpx.Request], httpx.Response]
@@ -43,6 +44,7 @@ class FakeBilka:
         self.email = email
         self.password = password
         self.requests: list[httpx.Request] = []
+        self.orders: list[dict[str, Any]] = load_fixture("order_history.json")["orders"]
         self._scripts: dict[str, deque[Scripted]] = defaultdict(deque)
         self.transport = httpx.MockTransport(self._handle)
 
@@ -107,3 +109,11 @@ class FakeBilka:
             return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
         headers = [("set-cookie", f"{k}={v}; path=/") for k, v in SESSION_COOKIES.items()]
         return httpx.Response(200, json=load_fixture("login_jwt.json"), headers=headers)
+
+    def order_history(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        limit = int(request.url.params["limit"])
+        offset = int(request.url.params["offset"])
+        page = self.orders[offset : offset + limit]
+        return httpx.Response(200, json={"total": len(self.orders), "orders": page})

@@ -2,6 +2,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .client import BilkaToGoClient
 from .exceptions import BilkaToGoError, InvalidCredentialsError
+from .models import Order, OrderStatus, PickupPoint, PickupSlot
 from .token_storage import FileTokenStorage, TokenStorage
 
 try:
@@ -14,6 +15,10 @@ __all__ = [
     "BilkaToGoError",
     "FileTokenStorage",
     "InvalidCredentialsError",
+    "Order",
+    "OrderStatus",
+    "PickupPoint",
+    "PickupSlot",
     "TokenStorage",
     "__version__",
 ]

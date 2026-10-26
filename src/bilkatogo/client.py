@@ -10,9 +10,11 @@ from .const import (
     GIGYA_BASE_URL,
     GIGYA_INVALID_LOGIN_ID,
     JWT_LIFETIME_SECONDS,
+    ORDER_HISTORY_PARAMS,
     WEB_PARAMS,
 )
 from .exceptions import BilkaToGoError, InvalidCredentialsError
+from .models import Order
 from .token_storage import TokenStorage
 
 
@@ -66,6 +68,26 @@ class BilkaToGoClient:
                     "cookies": dict(response.cookies),
                 }
             )
+
+    async def get_orders(self, limit: int = 5, offset: int = 0) -> list[Order]:
+        data = await self._shop_post(
+            "shop/v7/OrderHistory",
+            {"limit": limit, "offset": offset, **ORDER_HISTORY_PARAMS},
+        )
+        return [Order.from_dict(order) for order in data.get("orders") or []]
+
+    async def _shop_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+        if self._jwt is None:
+            await self.login()
+        assert self._jwt is not None
+        response = await self._http.post(
+            f"{API_BASE_URL}/{path}",
+            params={**WEB_PARAMS, **params},
+            headers={"jwt_token": self._jwt},
+        )
+        if response.status_code != 200:
+            raise BilkaToGoError(f"{path} failed with HTTP {response.status_code}")
+        return response.json()
 
     async def _gigya_login(self) -> str:
         data = await self._gigya(

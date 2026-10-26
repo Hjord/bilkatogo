@@ -5,3 +5,4 @@ JWT_LIFETIME_SECONDS = 86400
 
 API_BASE_URL = "https://api.bilkatogo.dk/api"
 WEB_PARAMS = {"u": "w"}
+ORDER_HISTORY_PARAMS = {"muah": 1, "ordertype": "dibs,pgw"}
