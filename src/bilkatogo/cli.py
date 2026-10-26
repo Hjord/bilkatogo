@@ -1,0 +1,269 @@
+import asyncio
+import functools
+import json
+import sys
+from collections.abc import Awaitable, Callable, Coroutine
+from datetime import date, datetime, time
+from typing import Annotated, Any
+
+import httpx
+import typer
+
+from . import config
+from .client import BilkaToGoClient
+from .exceptions import (
+    BilkaToGoError,
+    BilkaUnreachableError,
+    InvalidCredentialsError,
+    UnexpectedResponseError,
+)
+from .models import BilkaDataClass, Order, OrderStatus, PickupPoint, PickupSlot
+from .token_storage import FileTokenStorage
+
+app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
+
+EmailOption = Annotated[
+    str | None, typer.Option("--email", envvar="BILKATOGO_EMAIL", help="BilkaToGo account email.")
+]
+PasswordOption = Annotated[
+    str | None,
+    typer.Option("--password", envvar="BILKATOGO_PASSWORD", help="BilkaToGo account password."),
+]
+JsonOption = Annotated[bool, typer.Option("--json", help="Output JSON.")]
+
+
+def run_async[**P, R](func: Callable[P, Coroutine[Any, Any, R]]) -> Callable[P, R]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        loop_factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
+        return asyncio.run(func(*args, **kwargs), loop_factory=loop_factory)
+
+    return wrapper
+
+
+def known_credentials(email: str | None, password: str | None) -> tuple[str | None, str | None]:
+    saved = config.load_config()
+    return email or saved.get("email"), password or saved.get("password")
+
+
+def resolve_credentials(email: str | None, password: str | None) -> tuple[str, str]:
+    email, password = known_credentials(email, password)
+    return email or typer.prompt("Email"), password or prompt_password()
+
+
+def prompt_password() -> str:
+    return typer.prompt("Password", hide_input=True)
+
+
+def to_json(data: Any) -> str:
+    def default(obj: Any) -> Any:
+        if isinstance(obj, BilkaDataClass):
+            return dict(obj)
+        if isinstance(obj, datetime | date | time):
+            return obj.isoformat()
+        raise TypeError(f"Cannot serialise {type(obj).__name__}")
+
+    return json.dumps(data, default=default, ensure_ascii=False)
+
+
+def print_table(headers: list[str], rows: list[list[str]]) -> None:
+    widths = [max(len(cell) for cell in column) for column in zip(headers, *rows, strict=True)]
+    for row in [headers, *rows]:
+        typer.echo("  ".join(cell.ljust(width) for cell, width in zip(row, widths, strict=True)))
+
+
+def http_client(ctx: typer.Context) -> httpx.AsyncClient | None:
+    factory = ctx.obj
+    return factory() if callable(factory) else None
+
+
+def fail(message: str) -> typer.Exit:
+    typer.echo(message, err=True)
+    return typer.Exit(code=1)
+
+
+def failure(action: str, err: BilkaToGoError) -> typer.Exit:
+    if isinstance(err, InvalidCredentialsError):
+        return fail("Login failed: Wrong email or password.")
+    if isinstance(err, BilkaUnreachableError):
+        return fail(f"{action}: Could not reach Bilka. Check your connection and try again.")
+    if isinstance(err, UnexpectedResponseError):
+        return fail(f"{action}: Bilka answered unexpectedly ({err}). Try again later.")
+    return fail(f"{action}: {err}")
+
+
+@app.callback()
+def main_callback() -> None:
+    pass
+
+
+@app.command()
+@run_async
+async def login(
+    ctx: typer.Context,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Log in and store the session for later commands."""
+    email, password = resolve_credentials(email, password)
+    storage = FileTokenStorage(config.session_file())
+    http = http_client(ctx)
+    try:
+        async with BilkaToGoClient(
+            email, password, token_storage=storage, httpx_client=http
+        ) as client:
+            await client.login()
+    except BilkaToGoError as err:
+        raise failure("Login failed", err) from None
+    finally:
+        if http is not None:
+            await http.aclose()
+
+    if as_json:
+        typer.echo(json.dumps({"email": email, "logged_in": True}))
+    else:
+        typer.echo(f"Logged in as {email}.")
+
+
+async def with_session[T](
+    ctx: typer.Context,
+    email: str | None,
+    password: str | None,
+    fetch: Callable[[BilkaToGoClient], Awaitable[T]],
+    what: str,
+) -> T:
+    storage = FileTokenStorage(config.session_file())
+    email, password = known_credentials(email, password)
+    if email is None:
+        session = await storage.load()
+        email = (session or {}).get("email") or typer.prompt("Email")
+    http = http_client(ctx)
+    try:
+        try:
+            async with BilkaToGoClient(
+                email, password, token_storage=storage, httpx_client=http
+            ) as client:
+                return await fetch(client)
+        except InvalidCredentialsError:
+            if password is not None:
+                raise
+            async with BilkaToGoClient(
+                email, prompt_password(), token_storage=storage, httpx_client=http
+            ) as client:
+                return await fetch(client)
+    except BilkaToGoError as err:
+        raise failure(f"Could not fetch {what}", err) from None
+    finally:
+        if http is not None:
+            await http.aclose()
+
+
+LimitOption = Annotated[int, typer.Option("--limit", min=1, help="Number of orders to show.")]
+WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+@app.command()
+@run_async
+async def orders(
+    ctx: typer.Context,
+    limit: LimitOption = 5,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show your Orders with their Pickup Slot and Order Status."""
+    found = await with_session(
+        ctx, email, password, lambda client: client.get_orders(limit=limit), "orders"
+    )
+    if as_json:
+        typer.echo(to_json(found))
+    elif not found:
+        typer.echo("No orders.")
+    else:
+        print_table(
+            ["Order", "Ordered", "Pickup Slot", "Pickup Point", "Status"],
+            [order_row(order) for order in found],
+        )
+
+
+def order_row(order: Order) -> list[str]:
+    return [
+        order.order_number,
+        order.ordered_at.strftime("%Y-%m-%d %H:%M") if order.ordered_at else "",
+        format_slot(order.pickup_slot),
+        format_point(order.pickup_point, order.home_delivery),
+        format_status(order.status),
+    ]
+
+
+def format_slot(slot: PickupSlot | None) -> str:
+    if slot is None:
+        return ""
+    return f"{WEEKDAYS[slot.date.weekday()]} {slot.date:%d/%m} {slot.start:%H:%M}-{slot.end:%H:%M}"
+
+
+def format_point(point: PickupPoint | None, home_delivery: bool) -> str:
+    return "Home Delivery" if home_delivery else (point.name if point else "")
+
+
+def format_status(status: OrderStatus) -> str:
+    return status.name.replace("_", " ").title()
+
+
+OrderNumberArgument = Annotated[
+    str | None,
+    typer.Argument(help="Order Number, e.g. 900000000001. Defaults to the Current Order."),
+]
+
+
+@app.command()
+@run_async
+async def order(
+    ctx: typer.Context,
+    order_number: OrderNumberArgument = None,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show one Order, or the Current Order, with its Pickup Code and Substitutions."""
+    if order_number is None:
+        details = await with_session(
+            ctx, email, password, lambda client: client.get_current_order(), "the current order"
+        )
+    else:
+        details = await with_session(
+            ctx,
+            email,
+            password,
+            lambda client: client.get_order(order_number),
+            f"order {order_number}",
+        )
+    if as_json:
+        typer.echo(to_json(details))
+        return
+    if details is None:
+        typer.echo("No orders.")
+        return
+    fields = [
+        ("Order", details.order_number),
+        ("Status", format_status(details.status)),
+        ("Pickup Slot", format_slot(details.pickup_slot)),
+        ("Pickup Point", format_point(details.pickup_point, details.home_delivery)),
+        ("Pickup Code", details.pickup_code.code if details.pickup_code else ""),
+    ]
+    for label, value in fields:
+        typer.echo(f"{label:<13} {value}")
+    if not details.substitutions:
+        typer.echo("Substitutions none")
+        return
+    typer.echo("Substitutions")
+    for substitution in details.substitutions:
+        typer.echo(
+            f"  {substitution.original_product} -> "
+            f"{substitution.quantity} x {substitution.replacement_product}"
+        )
+
+
+def main() -> None:
+    app()

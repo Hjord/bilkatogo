@@ -1,0 +1,380 @@
+# serializer version: 1
+# name: test_diagnostics_keep_products_and_store_but_redact_personal_data
+  dict({
+    'data': dict({
+      'details': dict({
+        '_raw': dict({
+          'deliveryAddress': '**REDACTED**',
+          'deliveryDate': '2026-10-27',
+          'deliveryInterval': dict({
+            'end': '14:00:00',
+            'start': '12:00:00',
+          }),
+          'lines': list([
+            dict({
+              'headline': 'Frugt & grønt',
+              'lines': list([
+                dict({
+                  'orderlines': list([
+                    dict({
+                      'amount': 1200,
+                      'children': list([
+                        dict({
+                          'amount': 1200,
+                          'product': dict({
+                            'name': 'Pærer',
+                            'objectID': 1002,
+                          }),
+                          'quantity': 4,
+                        }),
+                      ]),
+                      'product': dict({
+                        'name': 'Æbler',
+                        'objectID': 1001,
+                      }),
+                      'quantity': 4,
+                      'replacement': None,
+                      'strikethrough': True,
+                      'tagline': 'erstattet',
+                      'unavailable_reason': '',
+                    }),
+                    dict({
+                      'amount': 2500,
+                      'children': list([
+                      ]),
+                      'product': dict({
+                        'name': 'Rugbrød',
+                        'objectID': 1003,
+                      }),
+                      'quantity': 1,
+                      'replacement': None,
+                      'strikethrough': None,
+                      'tagline': None,
+                      'unavailable_reason': '',
+                    }),
+                  ]),
+                }),
+              ]),
+              'type': '',
+            }),
+            dict({
+              'headline': 'Mejeri',
+              'lines': list([
+                dict({
+                  'orderlines': list([
+                    dict({
+                      'amount': 1100,
+                      'children': list([
+                        dict({
+                          'amount': 1950,
+                          'product': dict({
+                            'name': 'Minimælk',
+                            'objectID': 1005,
+                          }),
+                          'quantity': 3,
+                        }),
+                      ]),
+                      'product': dict({
+                        'name': 'Letmælk',
+                        'objectID': 1004,
+                      }),
+                      'quantity': 2,
+                      'replacement': None,
+                      'strikethrough': True,
+                      'tagline': 'erstattet',
+                      'unavailable_reason': '',
+                    }),
+                  ]),
+                }),
+              ]),
+              'type': '',
+            }),
+          ]),
+          'orderId': '900000000001',
+          'price': 50900,
+          'stat': dict({
+            'has_replacements': True,
+            'oos': False,
+          }),
+          'status': 'Pakket',
+        }),
+        'home_delivery': False,
+        'lines': list([
+          dict({
+            '_raw': dict({
+              'amount': 1200,
+              'children': list([
+                dict({
+                  'amount': 1200,
+                  'product': dict({
+                    'name': 'Pærer',
+                    'objectID': 1002,
+                  }),
+                  'quantity': 4,
+                }),
+              ]),
+              'product': dict({
+                'name': 'Æbler',
+                'objectID': 1001,
+              }),
+              'quantity': 4,
+              'replacement': None,
+              'strikethrough': True,
+              'tagline': 'erstattet',
+              'unavailable_reason': '',
+            }),
+            'amount': 1200,
+            'category': 'Frugt & grønt',
+            'name': 'Æbler',
+            'product_id': 1001,
+            'quantity': 4,
+            'substituted': True,
+            'unavailable_reason': '',
+          }),
+          dict({
+            '_raw': dict({
+              'amount': 2500,
+              'children': list([
+              ]),
+              'product': dict({
+                'name': 'Rugbrød',
+                'objectID': 1003,
+              }),
+              'quantity': 1,
+              'replacement': None,
+              'strikethrough': None,
+              'tagline': None,
+              'unavailable_reason': '',
+            }),
+            'amount': 2500,
+            'category': 'Frugt & grønt',
+            'name': 'Rugbrød',
+            'product_id': 1003,
+            'quantity': 1,
+            'substituted': False,
+            'unavailable_reason': '',
+          }),
+          dict({
+            '_raw': dict({
+              'amount': 1100,
+              'children': list([
+                dict({
+                  'amount': 1950,
+                  'product': dict({
+                    'name': 'Minimælk',
+                    'objectID': 1005,
+                  }),
+                  'quantity': 3,
+                }),
+              ]),
+              'product': dict({
+                'name': 'Letmælk',
+                'objectID': 1004,
+              }),
+              'quantity': 2,
+              'replacement': None,
+              'strikethrough': True,
+              'tagline': 'erstattet',
+              'unavailable_reason': '',
+            }),
+            'amount': 1100,
+            'category': 'Mejeri',
+            'name': 'Letmælk',
+            'product_id': 1004,
+            'quantity': 2,
+            'substituted': True,
+            'unavailable_reason': '',
+          }),
+        ]),
+        'order_number': '900000000001',
+        'pickup_code': '**REDACTED**',
+        'pickup_point': dict({
+          '_raw': dict({
+            'address': '**REDACTED**',
+            'city': '**REDACTED**',
+            'home_delivery': False,
+            'location': 'Bilka Eksempelby',
+            'order_pickup_code': '**REDACTED**',
+            'zipCode': '**REDACTED**',
+          }),
+          'address': '**REDACTED**',
+          'city': '**REDACTED**',
+          'name': 'Bilka Eksempelby',
+          'zip_code': '**REDACTED**',
+        }),
+        'pickup_slot': dict({
+          '_raw': dict({
+            'deliveryDate': '2026-10-27',
+            'deliveryInterval': dict({
+              'end': '14:00:00',
+              'start': '12:00:00',
+            }),
+          }),
+          'date': dict({
+            '__type': "<class 'datetime.date'>",
+            'isoformat': '2026-10-27',
+          }),
+          'end': dict({
+            '__type': "<class 'datetime.time'>",
+            'isoformat': '14:00:00',
+          }),
+          'start': dict({
+            '__type': "<class 'datetime.time'>",
+            'isoformat': '12:00:00',
+          }),
+        }),
+        'price': 50900,
+        'status': 'packed',
+        'status_code': 'Pakket',
+        'substitutions': list([
+          dict({
+            '_raw': dict({
+              'amount': 1200,
+              'children': list([
+                dict({
+                  'amount': 1200,
+                  'product': dict({
+                    'name': 'Pærer',
+                    'objectID': 1002,
+                  }),
+                  'quantity': 4,
+                }),
+              ]),
+              'product': dict({
+                'name': 'Æbler',
+                'objectID': 1001,
+              }),
+              'quantity': 4,
+              'replacement': None,
+              'strikethrough': True,
+              'tagline': 'erstattet',
+              'unavailable_reason': '',
+            }),
+            'original_product': 'Æbler',
+            'quantity': 4,
+            'replacement_product': 'Pærer',
+          }),
+          dict({
+            '_raw': dict({
+              'amount': 1100,
+              'children': list([
+                dict({
+                  'amount': 1950,
+                  'product': dict({
+                    'name': 'Minimælk',
+                    'objectID': 1005,
+                  }),
+                  'quantity': 3,
+                }),
+              ]),
+              'product': dict({
+                'name': 'Letmælk',
+                'objectID': 1004,
+              }),
+              'quantity': 2,
+              'replacement': None,
+              'strikethrough': True,
+              'tagline': 'erstattet',
+              'unavailable_reason': '',
+            }),
+            'original_product': 'Letmælk',
+            'quantity': 3,
+            'replacement_product': 'Minimælk',
+          }),
+        ]),
+      }),
+      'order': dict({
+        '_raw': dict({
+          'content': 'Æbler, Rugbrød',
+          'delivered': True,
+          'deliveryDate': '2026-10-27',
+          'deliveryInterval': dict({
+            'end': '14:00:00',
+            'start': '12:00:00',
+          }),
+          'name': '**REDACTED**',
+          'orderId': '900000000001',
+          'ordered': dict({
+            'channel': 'Web',
+            'date': '2026-10-26',
+            'time': '18:30:00',
+          }),
+          'orderedPrice': 51200,
+          'packedPrice': 50900,
+          'pickupzone': dict({
+            'address': '**REDACTED**',
+            'city': '**REDACTED**',
+            'home_delivery': False,
+            'location': 'Bilka Eksempelby',
+            'zipCode': '**REDACTED**',
+          }),
+          'status': 'Pakket',
+        }),
+        'content': 'Æbler, Rugbrød',
+        'delivered': True,
+        'home_delivery': False,
+        'order_number': '900000000001',
+        'ordered_at': '2026-10-26T18:30:00',
+        'ordered_price': 51200,
+        'packed_price': 50900,
+        'pickup_point': dict({
+          '_raw': dict({
+            'address': '**REDACTED**',
+            'city': '**REDACTED**',
+            'home_delivery': False,
+            'location': 'Bilka Eksempelby',
+            'zipCode': '**REDACTED**',
+          }),
+          'address': '**REDACTED**',
+          'city': '**REDACTED**',
+          'name': 'Bilka Eksempelby',
+          'zip_code': '**REDACTED**',
+        }),
+        'pickup_slot': dict({
+          '_raw': dict({
+            'deliveryDate': '2026-10-27',
+            'deliveryInterval': dict({
+              'end': '14:00:00',
+              'start': '12:00:00',
+            }),
+          }),
+          'date': dict({
+            '__type': "<class 'datetime.date'>",
+            'isoformat': '2026-10-27',
+          }),
+          'end': dict({
+            '__type': "<class 'datetime.time'>",
+            'isoformat': '14:00:00',
+          }),
+          'start': dict({
+            '__type': "<class 'datetime.time'>",
+            'isoformat': '12:00:00',
+          }),
+        }),
+        'status': 'packed',
+        'status_code': 'Pakket',
+      }),
+    }),
+    'entry': dict({
+      'data': dict({
+        'email': '**REDACTED**',
+        'password': '**REDACTED**',
+      }),
+      'disabled_by': None,
+      'discovery_keys': dict({
+      }),
+      'domain': 'bilkatogo',
+      'minor_version': 1,
+      'options': dict({
+      }),
+      'pref_disable_new_entities': False,
+      'pref_disable_polling': False,
+      'source': 'user',
+      'subentries': list([
+      ]),
+      'title': '**REDACTED**',
+      'unique_id': '**REDACTED**',
+      'version': 1,
+    }),
+  })
+# ---

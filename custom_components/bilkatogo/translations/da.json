@@ -1,0 +1,109 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Log ind med den e-mail og adgangskode, du bruger på bilkatogo.dk.",
+        "data": {
+          "email": "E-mail",
+          "password": "Adgangskode"
+        },
+        "data_description": {
+          "email": "E-mailadressen på din BilkaToGo-konto.",
+          "password": "Adgangskoden til din BilkaToGo-konto."
+        }
+      },
+      "reauth_confirm": {
+        "description": "Adgangskoden til {email} virker ikke længere. Indtast den adgangskode, du nu bruger på bilkatogo.dk.",
+        "data": {
+          "password": "Adgangskode"
+        },
+        "data_description": {
+          "password": "Adgangskoden til din BilkaToGo-konto."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Forkert e-mail eller adgangskode.",
+      "cannot_connect": "Kunne ikke få forbindelse til Bilka. Prøv igen senere.",
+      "unknown": "Bilka svarede uventet. Prøv igen senere."
+    },
+    "abort": {
+      "already_configured": "Denne BilkaToGo-konto er allerede tilføjet.",
+      "reauth_successful": "Adgangskoden er opdateret."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "order_status": {
+        "name": "Ordrestatus",
+        "state": {
+          "processing": "Ubehandlet",
+          "received": "Modtaget",
+          "packed": "Pakket",
+          "picked_up": "Afhentet og faktureret",
+          "not_collected": "Uafhentet",
+          "cancelled": "Annulleret",
+          "sold_out": "Fuldt udsolgt",
+          "unrecognized": "Ukendt"
+        },
+        "state_attributes": {
+          "status_code": {
+            "name": "Bilka-statuskode"
+          }
+        }
+      },
+      "substitutions": {
+        "name": "Erstatningsvarer",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Erstatningsvarer"
+          }
+        }
+      },
+      "pickup_slot": {
+        "name": "Afhentningstidspunkt",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          },
+          "pickup_slot_end": {
+            "name": "Afhentning slutter"
+          }
+        }
+      },
+      "pickup_code": {
+        "name": "Afhentningskode",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          }
+        }
+      },
+      "pickup_point": {
+        "name": "Afhentningssted",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "update_failed": {
+      "message": "Kunne ikke hente ordrer fra Bilka: {error}"
+    },
+    "auth_failed": {
+      "message": "Bilka afviste den gemte adgangskode: {error}"
+    }
+  }
+}

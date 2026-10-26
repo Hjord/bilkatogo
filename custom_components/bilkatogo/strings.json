@@ -1,0 +1,109 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Sign in with the email and password you use on bilkatogo.dk.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "data_description": {
+          "email": "The email address of your BilkaToGo account.",
+          "password": "The password of your BilkaToGo account."
+        }
+      },
+      "reauth_confirm": {
+        "description": "The password for {email} no longer works. Enter the password you use on bilkatogo.dk now.",
+        "data": {
+          "password": "Password"
+        },
+        "data_description": {
+          "password": "The password of your BilkaToGo account."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Wrong email or password.",
+      "cannot_connect": "Could not reach Bilka. Try again later.",
+      "unknown": "Bilka answered unexpectedly. Try again later."
+    },
+    "abort": {
+      "already_configured": "This BilkaToGo account is already added.",
+      "reauth_successful": "The password is updated."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "order_status": {
+        "name": "Order status",
+        "state": {
+          "processing": "Processing",
+          "received": "Received",
+          "packed": "Packed",
+          "picked_up": "Picked up",
+          "not_collected": "Not collected",
+          "cancelled": "Cancelled",
+          "sold_out": "Sold out",
+          "unrecognized": "Unknown"
+        },
+        "state_attributes": {
+          "status_code": {
+            "name": "Bilka status code"
+          }
+        }
+      },
+      "substitutions": {
+        "name": "Substitutions",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Substitutions"
+          }
+        }
+      },
+      "pickup_slot": {
+        "name": "Pickup slot",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          },
+          "pickup_slot_end": {
+            "name": "Pickup slot end"
+          }
+        }
+      },
+      "pickup_code": {
+        "name": "Pickup code",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          }
+        }
+      },
+      "pickup_point": {
+        "name": "Pickup point",
+        "state_attributes": {
+          "order_number": {
+            "name": "Order number"
+          },
+          "price": {
+            "name": "Price"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "update_failed": {
+      "message": "Could not fetch orders from Bilka: {error}"
+    },
+    "auth_failed": {
+      "message": "Bilka rejected the stored password: {error}"
+    }
+  }
+}
