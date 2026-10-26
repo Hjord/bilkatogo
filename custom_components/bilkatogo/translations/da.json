@@ -103,8 +103,8 @@
           "order_number": {
             "name": "Ordrenummer"
           },
-          "price": {
-            "name": "Pris"
+          "order_total": {
+            "name": "Ordretotal"
           },
           "pickup_slot_end": {
             "name": "Afhentning slutter"
@@ -117,8 +117,8 @@
           "order_number": {
             "name": "Ordrenummer"
           },
-          "price": {
-            "name": "Pris"
+          "order_total": {
+            "name": "Ordretotal"
           }
         }
       },
@@ -128,8 +128,8 @@
           "order_number": {
             "name": "Ordrenummer"
           },
-          "price": {
-            "name": "Pris"
+          "order_total": {
+            "name": "Ordretotal"
           }
         }
       }

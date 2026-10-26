@@ -52,7 +52,7 @@ def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     order = data.order
     if order is None:
         return None
-    return {"order_number": order.order_number, "price": float(_order_price(order))}
+    return {"order_number": order.order_number, "order_total": float(_order_price(order))}
 
 
 def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
