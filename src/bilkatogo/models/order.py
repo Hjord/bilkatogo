@@ -1,9 +1,10 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from enum import StrEnum
 from typing import Any
 
+from ..const import BILKA_TIME_ZONE
 from .base import BilkaDataClass
 
 
@@ -41,6 +42,14 @@ class PickupSlot(BilkaDataClass):
     start: time
     end: time
     _raw: dict[str, Any] | None = field(default=None, repr=False)
+
+    @property
+    def starts_at(self) -> datetime:
+        return datetime.combine(self.date, self.start, BILKA_TIME_ZONE)
+
+    @property
+    def ends_at(self) -> datetime:
+        return datetime.combine(self.date, self.end, BILKA_TIME_ZONE)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PickupSlot | None:
@@ -128,12 +137,15 @@ def current_order(orders: Iterable[Order]) -> Order | None:
     history = list(orders)
     unfinished = [order for order in history if order.status not in FINISHED_STATUSES]
     if unfinished:
-        return min(unfinished, key=lambda order: _slot_start(order, datetime.max))
+        return min(unfinished, key=lambda order: _slot_start(order, _LATEST))
     if not history:
         return None
-    return max(history, key=lambda order: _slot_start(order, datetime.min))
+    return max(history, key=lambda order: _slot_start(order, _EARLIEST))
+
+
+_EARLIEST = datetime.min.replace(tzinfo=UTC)
+_LATEST = datetime.max.replace(tzinfo=UTC)
 
 
 def _slot_start(order: Order, missing: datetime) -> datetime:
-    slot = order.pickup_slot
-    return datetime.combine(slot.date, slot.start) if slot else missing
+    return order.pickup_slot.starts_at if order.pickup_slot else missing

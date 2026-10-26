@@ -29,7 +29,6 @@ class Substitution(BilkaDataClass):
     original_product: str
     replacement_product: str
     quantity: int
-    replacement_quantity: int
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
@@ -44,8 +43,7 @@ class Substitution(BilkaDataClass):
             _raw=data,
             original_product=_product_name(data),
             replacement_product=_product_name(replacement),
-            quantity=int(data.get("quantity") or 0),
-            replacement_quantity=int(replacement.get("quantity") or 0),
+            quantity=int(replacement.get("quantity") or 0),
         )
 
 

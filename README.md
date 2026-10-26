@@ -13,7 +13,7 @@ the same version.
 
 ## Installation
 
-Library only (its sole dependency is httpx):
+Library only (it depends on httpx, plus tzdata on Windows):
 
 ```sh
 pip install bilkatogo
@@ -103,6 +103,7 @@ asyncio.run(main())
 - `Order.status` is an `OrderStatus` (Processing, Received, Packed, Picked Up, Not Collected,
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
+- `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
 - Prices are in øre.
 
 ## Home Assistant
@@ -124,12 +125,15 @@ All entities describe the Current Order.
 | Entity | State | Attributes |
 |---|---|---|
 | Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code |
-| Substitutions | Number of substituted products | List of Original Product, Replacement Product and quantity |
+| Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
 | Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, price (DKK), Pickup Slot end |
 | Pickup Code | The code you enter at check-in | Order Number, price (DKK) |
 | Pickup Point | The Bilka store you pick up from | Order Number, price (DKK) |
 
 Substitutions and the Pickup Code are fetched once the order is packed.
+
+An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
+not know yet; the code is in the attribute. Without any order the entities have no state.
 
 ### Event `bilkatogo_substitution`
 

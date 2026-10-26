@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
+import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
@@ -19,7 +20,7 @@ ORDER_NUMBER = "900000000001"
 
 SUBSTITUTIONS = [
     {"original_product": "Æbler", "replacement_product": "Pærer", "quantity": 4},
-    {"original_product": "Letmælk", "replacement_product": "Minimælk", "quantity": 2},
+    {"original_product": "Letmælk", "replacement_product": "Minimælk", "quantity": 3},
 ]
 
 
@@ -82,6 +83,43 @@ async def test_details_are_fetched_only_while_packed_and_kept_after_pickup(
     state = substitutions(hass, entry)
     assert state.state == "2"
     assert state.attributes["substitutions"] == SUBSTITUTIONS
+    assert len(bilka.calls("order_details")) == 1
+
+
+@pytest.mark.parametrize("status_code", ["Uafhentet", "Annulleret", "Fuldt udsolgt"])
+async def test_details_are_fetched_for_orders_that_ended_without_pickup(
+    hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka, status_code: str
+) -> None:
+    set_status(bilka, status_code)
+
+    entry = await setup_integration()
+
+    assert substitutions(hass, entry).state == "2"
+
+
+async def test_a_picked_up_order_fetches_its_details_once_after_a_restart(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    set_status(bilka, "Faktureret")
+
+    entry = await setup_integration()
+
+    assert substitutions(hass, entry).state == "2"
+    pickup_code = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_pickup_code"
+    )
+    assert pickup_code is not None
+    state = hass.states.get(pickup_code)
+    assert state is not None
+    assert state.state == "12345678"
+    assert len(bilka.calls("order_details")) == 1
+
+    await next_update(hass, freezer)
+    await next_update(hass, freezer)
+    assert substitutions(hass, entry).state == "2"
     assert len(bilka.calls("order_details")) == 1
 
 

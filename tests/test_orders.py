@@ -219,3 +219,22 @@ async def test_order_with_missing_optional_fields_still_parses(bilka: FakeBilka)
     assert order.ordered_at is None
     assert order.home_delivery is False
     assert order.ordered_price == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("delivery_date", "starts_at", "ends_at"),
+    [
+        ("2026-11-03", "2026-11-03T16:00:00+01:00", "2026-11-03T18:00:00+01:00"),
+        ("2026-07-01", "2026-07-01T16:00:00+02:00", "2026-07-01T18:00:00+02:00"),
+    ],
+    ids=["winter", "summer"],
+)
+async def test_pickup_slot_times_are_in_copenhagen(
+    bilka: FakeBilka, delivery_date: str, starts_at: str, ends_at: str
+) -> None:
+    order = await fetch_one(bilka, synthetic_order(deliveryDate=delivery_date))
+
+    assert order.pickup_slot is not None
+    assert order.pickup_slot.starts_at.isoformat() == starts_at
+    assert order.pickup_slot.ends_at.isoformat() == ends_at

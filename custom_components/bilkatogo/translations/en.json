@@ -44,7 +44,7 @@
           "not_collected": "Not collected",
           "cancelled": "Cancelled",
           "sold_out": "Sold out",
-          "unknown": "Unknown"
+          "unrecognized": "Unknown"
         },
         "state_attributes": {
           "status_code": {

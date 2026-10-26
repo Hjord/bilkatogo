@@ -62,7 +62,7 @@
                 "strikethrough": true,
                 "tagline": "erstattet",
                 "children": [
-                  {"quantity": 2, "amount": 1300, "product": {"objectID": 1005, "name": "Minimælk"}}
+                  {"quantity": 3, "amount": 1950, "product": {"objectID": 1005, "name": "Minimælk"}}
                 ]
               }
             ]

@@ -17,12 +17,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
-from .coordinator import (
-    BILKA_TIME_ZONE,
-    BilkaToGoConfigEntry,
-    BilkaToGoCoordinator,
-    BilkaToGoData,
-)
+from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
+from .substitutions import substitution_data
 
 PARALLEL_UPDATES = 0
 
@@ -37,8 +33,14 @@ def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
     slot = order.pickup_slot if order else None
     if slot is None:
         return None
-    moment = slot.start if start else slot.end
-    return datetime.combine(slot.date, moment, BILKA_TIME_ZONE)
+    return slot.starts_at if start else slot.ends_at
+
+
+UNRECOGNIZED_STATUS = "unrecognized"
+
+
+def _status_option(status: OrderStatus) -> str:
+    return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
 
 
 def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
@@ -62,8 +64,8 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         key="order_status",
         translation_key="order_status",
         device_class=SensorDeviceClass.ENUM,
-        options=[status.value for status in OrderStatus],
-        value_fn=lambda data: data.order.status.value if data.order else None,
+        options=[_status_option(status) for status in OrderStatus],
+        value_fn=lambda data: _status_option(data.order.status) if data.order else None,
         attributes_fn=lambda data: {"status_code": data.order.status_code} if data.order else None,
     ),
     BilkaToGoSensorDescription(
@@ -96,12 +98,7 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         attributes_fn=lambda data: (
             {
                 "substitutions": [
-                    {
-                        "original_product": substitution.original_product,
-                        "replacement_product": substitution.replacement_product,
-                        "quantity": substitution.quantity,
-                    }
-                    for substitution in data.details.substitutions
+                    substitution_data(substitution) for substitution in data.details.substitutions
                 ]
             }
             if data.details

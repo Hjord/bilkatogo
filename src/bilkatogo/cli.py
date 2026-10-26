@@ -260,8 +260,8 @@ async def order(
     typer.echo("Substitutions")
     for substitution in details.substitutions:
         typer.echo(
-            f"  {substitution.quantity} x {substitution.original_product} -> "
-            f"{substitution.replacement_quantity} x {substitution.replacement_product}"
+            f"  {substitution.original_product} -> "
+            f"{substitution.quantity} x {substitution.replacement_product}"
         )
 
 

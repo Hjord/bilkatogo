@@ -1,5 +1,7 @@
 import asyncio
 import json
+import sys
+from importlib.metadata import entry_points
 from pathlib import Path
 
 import httpx
@@ -270,8 +272,8 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Pickup Point  Bilka Eksempelby",
         "Pickup Code   12345678",
         "Substitutions",
-        "  4 x Æbler -> 4 x Pærer",
-        "  2 x Letmælk -> 2 x Minimælk",
+        "  Æbler -> 4 x Pærer",
+        "  Letmælk -> 3 x Minimælk",
     ]
     assert len(bilka.calls("gigya_login")) == 1
 
@@ -298,7 +300,6 @@ def test_order_json_output(invoke) -> None:
         "original_product": "Æbler",
         "replacement_product": "Pærer",
         "quantity": 4,
-        "replacement_quantity": 4,
     }
     assert details["lines"][1] == {
         "category": "Frugt & grønt",
@@ -345,3 +346,20 @@ def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> 
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) is None
+
+
+def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    [script] = entry_points(group="console_scripts", name="bilkatogo")
+    main = script.load()
+    monkeypatch.setitem(sys.modules, "typer", None)
+    monkeypatch.delitem(sys.modules, "bilkatogo.cli")
+
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+
+    assert exit_info.value.code == 1
+    message = capsys.readouterr().err.strip()
+    assert "bilkatogo[cli]" in message
+    assert "\n" not in message

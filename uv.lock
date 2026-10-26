@@ -374,6 +374,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-9-bilkatogo-dev' and extra == 'group-9-bilkatogo-ha')" },
 ]
 
 [package.optional-dependencies]
@@ -399,6 +400,7 @@ ha = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "typer", marker = "extra == 'cli'", specifier = ">=0.27.3,<0.28" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 provides-extras = ["cli"]
 

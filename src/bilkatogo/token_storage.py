@@ -8,8 +8,6 @@ from typing import Any
 
 
 class TokenStorage(ABC):
-    """Persists the client's session between runs. The data is an opaque JSON-able dict."""
-
     @abstractmethod
     async def load(self) -> dict[str, Any] | None: ...
 

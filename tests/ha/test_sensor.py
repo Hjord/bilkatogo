@@ -39,7 +39,7 @@ async def test_order_status_shows_the_current_order(
         "not_collected",
         "cancelled",
         "sold_out",
-        "unknown",
+        "unrecognized",
     ]
 
 
@@ -66,7 +66,7 @@ async def test_order_status_follows_bilka_every_60_minutes(
     assert state.attributes["status_code"] == "Pakket"
 
 
-async def test_unknown_bilka_status_code_is_kept_as_attribute(
+async def test_unrecognized_bilka_status_code_differs_from_no_order(
     hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka
 ) -> None:
     bilka.orders[0] = {**bilka.orders[0], "status": "Noget nyt"}
@@ -74,7 +74,7 @@ async def test_unknown_bilka_status_code_is_kept_as_attribute(
     entry = await setup_integration()
 
     state = order_status(hass, entry)
-    assert state.state == STATE_UNKNOWN
+    assert state.state == "unrecognized"
     assert state.attributes["status_code"] == "Noget nyt"
 
 
@@ -102,10 +102,12 @@ async def test_order_status_states_are_translated_in_danish_and_english(
     assert da[f"{prefix}packed"] == "Pakket"
     assert da[f"{prefix}received"] == "Modtaget"
     assert en[f"{prefix}picked_up"] == "Picked up"
+    assert da[f"{prefix}unrecognized"] == "Ukendt"
+    assert en[f"{prefix}unrecognized"] == "Unknown"
     for translations in (da, en):
         assert {key.removeprefix(prefix) for key in translations if key.startswith(prefix)} == {
-            status.value for status in OrderStatus
-        }
+            status.value for status in OrderStatus if status is not OrderStatus.UNKNOWN
+        } | {"unrecognized"}
 
 
 def sensor_state(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> State:

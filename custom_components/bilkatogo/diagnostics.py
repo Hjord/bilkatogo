@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Any
 
-from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.components.diagnostics import REDACTED, async_redact_data
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
@@ -16,8 +16,6 @@ TO_REDACT = {
     "order_pickup_code",
     "deliveryAddress",
     "address",
-    "location",
-    "name",
     "zipCode",
     "zip_code",
     "zipcity",
@@ -41,15 +39,28 @@ TO_REDACT = {
     "jwt_validation",
 }
 
+CUSTOMER_NAME_PATHS = (("data", "order", "_raw", "name"),)
+
+
+def _redact_paths(data: dict[str, Any], paths: tuple[tuple[str, ...], ...]) -> dict[str, Any]:
+    for *parents, key in paths:
+        node: Any = data
+        for parent in parents:
+            node = node.get(parent) if isinstance(node, dict) else None
+        if isinstance(node, dict) and key in node:
+            node[key] = REDACTED
+    return data
+
 
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: BilkaToGoConfigEntry
 ) -> dict[str, Any]:
     data = entry.runtime_data.data
-    return async_redact_data(
+    diagnostics = async_redact_data(
         {
             "entry": entry.as_dict(),
             "data": dataclasses.asdict(data) if data is not None else None,
         },
         TO_REDACT,
     )
+    return _redact_paths(diagnostics, CUSTOMER_NAME_PATHS)

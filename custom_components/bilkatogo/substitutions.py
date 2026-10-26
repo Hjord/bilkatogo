@@ -3,16 +3,22 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from bilkatogo import OrderDetails
+from bilkatogo import OrderDetails, Substitution
 
 from .const import DOMAIN, EVENT_SUBSTITUTION
 
 STORAGE_VERSION = 1
 
 
-class SubstitutionAnnouncer:
-    """Fires one event per new Substitution and remembers what was announced across restarts."""
+def substitution_data(substitution: Substitution) -> dict[str, Any]:
+    return {
+        "original_product": substitution.original_product,
+        "replacement_product": substitution.replacement_product,
+        "quantity": substitution.quantity,
+    }
 
+
+class SubstitutionAnnouncer:
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
         self._hass = hass
         self._store: Store[dict[str, Any]] = Store(
@@ -47,12 +53,7 @@ class SubstitutionAnnouncer:
         for substitution in new:
             self._hass.bus.async_fire(
                 EVENT_SUBSTITUTION,
-                {
-                    "order_number": details.order_number,
-                    "original_product": substitution.original_product,
-                    "replacement_product": substitution.replacement_product,
-                    "quantity": substitution.quantity,
-                },
+                {"order_number": details.order_number, **substitution_data(substitution)},
             )
 
     async def async_remove(self) -> None:
