@@ -4,6 +4,9 @@
       "order_status": {
         "default": "mdi:basket"
       },
+      "substitutions": {
+        "default": "mdi:swap-horizontal"
+      },
       "pickup_slot": {
         "default": "mdi:clock-outline"
       },

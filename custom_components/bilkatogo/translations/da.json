@@ -11,6 +11,15 @@
           "email": "E-mailadressen på din BilkaToGo-konto.",
           "password": "Adgangskoden til din BilkaToGo-konto."
         }
+      },
+      "reauth_confirm": {
+        "description": "Adgangskoden til {email} virker ikke længere. Indtast den adgangskode, du nu bruger på bilkatogo.dk.",
+        "data": {
+          "password": "Adgangskode"
+        },
+        "data_description": {
+          "password": "Adgangskoden til din BilkaToGo-konto."
+        }
       }
     },
     "error": {
@@ -19,7 +28,8 @@
       "unknown": "Bilka svarede uventet. Prøv igen senere."
     },
     "abort": {
-      "already_configured": "Denne BilkaToGo-konto er allerede tilføjet."
+      "already_configured": "Denne BilkaToGo-konto er allerede tilføjet.",
+      "reauth_successful": "Adgangskoden er opdateret."
     }
   },
   "entity": {
@@ -39,6 +49,14 @@
         "state_attributes": {
           "status_code": {
             "name": "Bilka-statuskode"
+          }
+        }
+      },
+      "substitutions": {
+        "name": "Erstatningsvarer",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Erstatningsvarer"
           }
         }
       },
@@ -83,6 +101,9 @@
   "exceptions": {
     "update_failed": {
       "message": "Kunne ikke hente ordrer fra Bilka: {error}"
+    },
+    "auth_failed": {
+      "message": "Bilka afviste den gemte adgangskode: {error}"
     }
   }
 }

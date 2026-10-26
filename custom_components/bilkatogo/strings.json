@@ -11,6 +11,15 @@
           "email": "The email address of your BilkaToGo account.",
           "password": "The password of your BilkaToGo account."
         }
+      },
+      "reauth_confirm": {
+        "description": "The password for {email} no longer works. Enter the password you use on bilkatogo.dk now.",
+        "data": {
+          "password": "Password"
+        },
+        "data_description": {
+          "password": "The password of your BilkaToGo account."
+        }
       }
     },
     "error": {
@@ -19,7 +28,8 @@
       "unknown": "Bilka answered unexpectedly. Try again later."
     },
     "abort": {
-      "already_configured": "This BilkaToGo account is already added."
+      "already_configured": "This BilkaToGo account is already added.",
+      "reauth_successful": "The password is updated."
     }
   },
   "entity": {
@@ -39,6 +49,14 @@
         "state_attributes": {
           "status_code": {
             "name": "Bilka status code"
+          }
+        }
+      },
+      "substitutions": {
+        "name": "Substitutions",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Substitutions"
           }
         }
       },
@@ -83,6 +101,9 @@
   "exceptions": {
     "update_failed": {
       "message": "Could not fetch orders from Bilka: {error}"
+    },
+    "auth_failed": {
+      "message": "Bilka rejected the stored password: {error}"
     }
   }
 }
