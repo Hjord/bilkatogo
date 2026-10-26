@@ -49,7 +49,12 @@ class FakeBilka:
         self.details: dict[str, dict[str, Any]] = {
             details["order"]["orderId"]: details
             for details in map(
-                load_fixture, ["order_details_substituted.json", "order_details_plain.json"]
+                load_fixture,
+                [
+                    "order_details_substituted.json",
+                    "order_details_plain.json",
+                    "order_details_captured.json",
+                ],
             )
         }
         self._scripts: dict[str, deque[Scripted]] = defaultdict(deque)

@@ -1,0 +1,91 @@
+{
+  "order": {
+    "orderId": "900000000003",
+    "status": "Pakket",
+    "deliveryDate": "2026-10-30",
+    "deliveryInterval": {
+      "start": "16:00:00",
+      "end": "18:00:00"
+    },
+    "deliveryAddress": {
+      "location": "Bilka Eksempelby",
+      "address": "Testvej 1",
+      "zipCode": "9999",
+      "city": "Eksempelby",
+      "order_pickup_code": "11223344",
+      "home_delivery": false
+    },
+    "price": 79380,
+    "stat": {
+      "amount": 0,
+      "diff": 0,
+      "price": 79380,
+      "price_vat": 0,
+      "serv_amount": 0,
+      "serv_diff": 0,
+      "serv_price": 0,
+      "prod_amount": 0,
+      "prod_amount_no_deposits": 0,
+      "prod_diff": 0,
+      "prod_price": 0,
+      "ageCode": 0,
+      "verified_ageCode": 999,
+      "promo": 0,
+      "oos": false,
+      "has_replacements": false,
+      "blockedByHoliday": false,
+      "deposit": 150,
+      "deposit_amount": 0,
+      "deposit_diff": 0,
+      "delivery_price": 0,
+      "is_member": 0,
+      "membership_offer_discount": 0,
+      "personalized_offer_discount": 0,
+      "packing": 3900,
+      "packaging_price": 0,
+      "price_no_promo": 0,
+      "subtotal_no_promo": 0,
+      "uncollected_fee": null,
+      "global_discounts": [],
+      "vouchers": [],
+      "minimum_left": 0,
+      "minimum_left_text": "",
+      "delivery_comment": null,
+      "specifications": [
+        {
+          "text": "Pakkeservice",
+          "value": 3900
+        },
+        {
+          "text": "Emballage",
+          "value": 0
+        }
+      ]
+    },
+    "lines": [
+      {
+        "headline": "Kolonial",
+        "type": "",
+        "lines": [
+          {
+            "orderlines": [
+              {
+                "quantity": 1,
+                "amount": 75330,
+                "product": {
+                  "objectID": 1007,
+                  "name": "Kaffe"
+                },
+                "unavailable_reason": "",
+                "replacement": null,
+                "strikethrough": null,
+                "tagline": null,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -24,6 +24,7 @@ class PickupCode(BilkaDataClass):
 _LOGGER = logging.getLogger(__name__)
 
 SUBSTITUTED_TAGLINE = "erstattet"
+DISCOUNT_KEYS = ("promo", "membership_offer_discount", "personalized_offer_discount")
 
 
 @dataclass
@@ -85,14 +86,21 @@ class OrderDetails(BilkaDataClass):
     home_delivery: bool
     pickup_code: PickupCode | None
     price: Decimal
+    ordered_total: Decimal | None
+    deposit: Decimal
+    service_fee: Decimal
+    packaging: Decimal
+    delivery_fee: Decimal
+    discount: Decimal
     lines: list[OrderLine]
     substitutions: list[Substitution]
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> OrderDetails:
+    def from_dict(cls, data: dict[str, Any], ordered_total: Decimal | None = None) -> OrderDetails:
         status_code = data.get("status") or ""
         address = data.get("deliveryAddress")
+        stat = data.get("stat") or {}
         raw_lines = [
             (group.get("headline") or "", line)
             for group in data.get("lines") or []
@@ -119,6 +127,15 @@ class OrderDetails(BilkaDataClass):
             home_delivery=bool((address or {}).get("home_delivery", False)),
             pickup_code=PickupCode.from_dict(address or {}),
             price=kroner(data.get("price")),
+            ordered_total=ordered_total,
+            deposit=kroner(stat.get("deposit")),
+            service_fee=kroner(stat.get("packing")),
+            packaging=kroner(stat.get("packaging_price")),
+            delivery_fee=kroner(stat.get("delivery_price")),
+            discount=kroner(
+                sum(int(stat.get(key) or 0) for key in DISCOUNT_KEYS)
+                + sum(int(voucher.get("amount") or 0) for voucher in stat.get("vouchers") or [])
+            ),
             lines=lines,
             substitutions=[
                 substitution

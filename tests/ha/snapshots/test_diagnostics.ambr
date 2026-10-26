@@ -98,6 +98,18 @@
           }),
           'status': 'Pakket',
         }),
+        'delivery_fee': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('0.00')",
+        }),
+        'deposit': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('0.00')",
+        }),
+        'discount': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('0.00')",
+        }),
         'home_delivery': False,
         'lines': list([
           dict({
@@ -196,6 +208,14 @@
           }),
         ]),
         'order_number': '900000000001',
+        'ordered_total': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('512.00')",
+        }),
+        'packaging': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('0.00')",
+        }),
         'pickup_code': '**REDACTED**',
         'pickup_point': dict({
           '_raw': dict({
@@ -235,6 +255,10 @@
         'price': dict({
           '__type': "<class 'decimal.Decimal'>",
           'repr': "Decimal('509.00')",
+        }),
+        'service_fee': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('0.00')",
         }),
         'status': 'packed',
         'status_code': 'Pakket',
