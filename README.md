@@ -124,7 +124,7 @@ All entities describe the Current Order.
 | Entity | State | Attributes |
 |---|---|---|
 | Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code |
-| Substitutions | Number of substituted products | List of Original Product, Replacement Product and quantity |
+| Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
 | Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, price (DKK), Pickup Slot end |
 | Pickup Code | The code you enter at check-in | Order Number, price (DKK) |
 | Pickup Point | The Bilka store you pick up from | Order Number, price (DKK) |

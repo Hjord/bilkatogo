@@ -270,8 +270,8 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Pickup Point  Bilka Eksempelby",
         "Pickup Code   12345678",
         "Substitutions",
-        "  4 x Æbler -> 4 x Pærer",
-        "  2 x Letmælk -> 2 x Minimælk",
+        "  Æbler -> 4 x Pærer",
+        "  Letmælk -> 3 x Minimælk",
     ]
     assert len(bilka.calls("gigya_login")) == 1
 
@@ -298,7 +298,6 @@ def test_order_json_output(invoke) -> None:
         "original_product": "Æbler",
         "replacement_product": "Pærer",
         "quantity": 4,
-        "replacement_quantity": 4,
     }
     assert details["lines"][1] == {
         "category": "Frugt & grønt",

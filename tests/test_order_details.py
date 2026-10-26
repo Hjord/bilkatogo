@@ -60,9 +60,8 @@ async def test_substitutions_pair_original_and_replacement_product(bilka: FakeBi
     details = await fetch(bilka, "900000000001")
 
     assert [
-        (s.original_product, s.replacement_product, s.quantity, s.replacement_quantity)
-        for s in details.substitutions
-    ] == [("Æbler", "Pærer", 4, 4), ("Letmælk", "Minimælk", 2, 2)]
+        (s.original_product, s.replacement_product, s.quantity) for s in details.substitutions
+    ] == [("Æbler", "Pærer", 4), ("Letmælk", "Minimælk", 3)]
     assert details.lines[0].substituted is True
     assert details.substitutions[0]._raw == details.lines[0]._raw
 

@@ -20,7 +20,7 @@ ORDER_NUMBER = "900000000001"
 
 SUBSTITUTIONS = [
     {"original_product": "Æbler", "replacement_product": "Pærer", "quantity": 4},
-    {"original_product": "Letmælk", "replacement_product": "Minimælk", "quantity": 2},
+    {"original_product": "Letmælk", "replacement_product": "Minimælk", "quantity": 3},
 ]
 
 
