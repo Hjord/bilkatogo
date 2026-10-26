@@ -1,5 +1,7 @@
 import asyncio
 import json
+import sys
+from importlib.metadata import entry_points
 from pathlib import Path
 
 import httpx
@@ -344,3 +346,20 @@ def test_order_without_a_number_and_no_orders_json(invoke, bilka: FakeBilka) -> 
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) is None
+
+
+def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    [script] = entry_points(group="console_scripts", name="bilkatogo")
+    main = script.load()
+    monkeypatch.setitem(sys.modules, "typer", None)
+    monkeypatch.delitem(sys.modules, "bilkatogo.cli")
+
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+
+    assert exit_info.value.code == 1
+    message = capsys.readouterr().err.strip()
+    assert "bilkatogo[cli]" in message
+    assert "\n" not in message

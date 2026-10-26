@@ -23,7 +23,7 @@ dependencies = [
 cli = ["typer>=0.27.3,<0.28"]
 
 [project.scripts]
-bilkatogo = "bilkatogo.cli:main"
+bilkatogo = "bilkatogo.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/nickknissen/bilkatogo"
