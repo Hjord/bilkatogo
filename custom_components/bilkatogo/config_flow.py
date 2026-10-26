@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -19,16 +20,18 @@ from bilkatogo import (
 
 from .const import DOMAIN, LOGGER
 
+PASSWORD_SELECTOR = TextSelector(
+    TextSelectorConfig(type=TextSelectorType.PASSWORD, autocomplete="current-password")
+)
 USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_EMAIL): TextSelector(
             TextSelectorConfig(type=TextSelectorType.EMAIL, autocomplete="username")
         ),
-        vol.Required(CONF_PASSWORD): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD, autocomplete="current-password")
-        ),
+        vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR,
     }
 )
+REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR})
 
 
 class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -49,6 +52,29 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
+            errors=errors,
+        )
+
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        entry = self._get_reauth_entry()
+        email = entry.data[CONF_EMAIL]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            password = user_input[CONF_PASSWORD]
+            errors = await self._async_try_login(email, password)
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry, data_updates={CONF_PASSWORD: password}
+                )
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=REAUTH_SCHEMA,
+            description_placeholders={"email": email},
             errors=errors,
         )
 
