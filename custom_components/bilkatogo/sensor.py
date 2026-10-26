@@ -65,7 +65,7 @@ def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
 
 def _order_total(data: BilkaToGoData) -> Decimal | None:
     if data.details:
-        return data.details.price
+        return data.details.order_total
     if data.order:
         return _order_price(data.order)
     return None

@@ -210,6 +210,10 @@
         'missing_items': list([
         ]),
         'order_number': '900000000001',
+        'order_total': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('509.00')",
+        }),
         'ordered_total': dict({
           '__type': "<class 'decimal.Decimal'>",
           'repr': "Decimal('512.00')",
@@ -254,10 +258,6 @@
             '__type': "<class 'datetime.time'>",
             'isoformat': '12:00:00',
           }),
-        }),
-        'price': dict({
-          '__type': "<class 'decimal.Decimal'>",
-          'repr': "Decimal('509.00')",
         }),
         'service_fee': dict({
           '__type': "<class 'decimal.Decimal'>",

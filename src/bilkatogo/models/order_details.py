@@ -111,7 +111,7 @@ class OrderDetails(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     pickup_code: PickupCode | None
-    price: Decimal
+    order_total: Decimal
     ordered_total: Decimal | None
     deposit: Decimal
     service_fee: Decimal
@@ -154,7 +154,7 @@ class OrderDetails(BilkaDataClass):
             pickup_point=PickupPoint.from_dict(address) if address else None,
             home_delivery=bool((address or {}).get("home_delivery", False)),
             pickup_code=PickupCode.from_dict(address or {}),
-            price=kroner(data.get("price")),
+            order_total=kroner(data.get("price")),
             ordered_total=ordered_total,
             deposit=kroner(stat.get("deposit")),
             service_fee=kroner(stat.get("packing")),

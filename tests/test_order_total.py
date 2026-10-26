@@ -20,7 +20,7 @@ async def fetch(bilka: FakeBilka, order_number: str) -> OrderDetails:
 async def test_captured_order_total_and_breakdown_in_kroner(bilka: FakeBilka) -> None:
     details = await fetch(bilka, CAPTURED)
 
-    assert str(details.price) == "793.80"
+    assert str(details.order_total) == "793.80"
     assert str(details.service_fee) == "39.00"
     assert str(details.deposit) == "1.50"
     assert details.packaging == Decimal("0.00")
@@ -56,7 +56,7 @@ async def test_order_without_a_stat_has_a_zero_breakdown(bilka: FakeBilka) -> No
 
     details = await fetch(bilka, CAPTURED)
 
-    assert str(details.price) == "793.80"
+    assert str(details.order_total) == "793.80"
     assert (details.deposit, details.service_fee, details.discount) == (0, 0, 0)
 
 
@@ -65,7 +65,7 @@ async def test_ordered_total_comes_from_the_order_history(bilka: FakeBilka) -> N
     details = await fetch(bilka, "900000000001")
 
     assert str(details.ordered_total) == "512.00"
-    assert str(details.price) == "509.00"
+    assert str(details.order_total) == "509.00"
 
 
 @pytest.mark.asyncio
