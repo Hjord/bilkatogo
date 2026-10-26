@@ -7,6 +7,7 @@ import httpx
 from .const import (
     API_BASE_URL,
     API_HOST,
+    CURRENT_ORDER_SCAN_LIMIT,
     GIGYA_API_KEY,
     GIGYA_BASE_URL,
     GIGYA_INVALID_LOGIN_ID,
@@ -16,7 +17,7 @@ from .const import (
     WEB_PARAMS,
 )
 from .exceptions import BilkaToGoError, InvalidCredentialsError
-from .models import Order, OrderDetails
+from .models import Order, OrderDetails, current_order
 from .token_storage import TokenStorage
 
 
@@ -98,6 +99,10 @@ class BilkaToGoClient:
         if not order:
             raise BilkaToGoError(f"Order {order_number} was not found")
         return OrderDetails.from_dict(order)
+
+    async def get_current_order(self) -> OrderDetails | None:
+        order = current_order(await self.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
+        return await self.get_order(order.order_number) if order else None
 
     async def _shop_request(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._jwt or await self._restore_session() or await self._login()

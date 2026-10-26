@@ -11,6 +11,7 @@ from .models import (
     PickupPoint,
     PickupSlot,
     Substitution,
+    current_order,
 )
 from .token_storage import FileTokenStorage, TokenStorage
 
@@ -34,4 +35,5 @@ __all__ = [
     "Substitution",
     "TokenStorage",
     "__version__",
+    "current_order",
 ]
