@@ -20,6 +20,7 @@ from .exceptions import (
     UnexpectedResponseError,
 )
 from .models import BilkaDataClass, Offer, Order, OrderStatus, PickupPoint, PickupSlot, Product
+from .redact import redact as redact_personal_data
 from .token_storage import FileTokenStorage
 
 app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
@@ -33,6 +34,10 @@ PasswordOption = Annotated[
 ]
 JsonOption = Annotated[bool, typer.Option("--json", help="Output JSON.")]
 RawOption = Annotated[bool, typer.Option("--raw", help="Print Bilka's JSON as received.")]
+RedactOption = Annotated[
+    bool,
+    typer.Option("--redact", help="With --raw: replace personal data with placeholders."),
+]
 
 
 def run_async[**P, R](func: Callable[P, Coroutine[Any, Any, R]]) -> Callable[P, R]:
@@ -71,7 +76,14 @@ def to_json(data: Any) -> str:
     return json.dumps(data, default=default, ensure_ascii=False)
 
 
-def print_raw(data: dict[str, Any] | None) -> None:
+def check_redact(raw: bool, redact: bool) -> None:
+    if redact and not raw:
+        raise fail("--redact only works with --raw.")
+
+
+def print_raw(data: dict[str, Any] | None, redact: bool) -> None:
+    if redact:
+        data = redact_personal_data(data)
     typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 
@@ -239,8 +251,10 @@ async def order(
     password: PasswordOption = None,
     as_json: JsonOption = False,
     raw: RawOption = False,
+    redact: RedactOption = False,
 ) -> None:
     """Show an Order (default: the Current Order), its Order Total and what packing changed."""
+    check_redact(raw, redact)
     if raw:
         if order_number is None:
             data = await with_session(
@@ -258,7 +272,7 @@ async def order(
                 lambda client: client.get_order_json(order_number),
                 f"order {order_number}",
             )
-        print_raw(data)
+        print_raw(data, redact)
         return
     if order_number is None:
         details = await with_session(
@@ -427,13 +441,15 @@ async def cart(
     password: PasswordOption = None,
     as_json: JsonOption = False,
     raw: RawOption = False,
+    redact: RedactOption = False,
 ) -> None:
     """Show your Cart: its Cart Lines, the Cart total and your Pickup Point."""
+    check_redact(raw, redact)
     if raw:
         data = await with_session(
             ctx, email, password, lambda client: client.get_cart_json(), "the cart"
         )
-        print_raw(data)
+        print_raw(data, redact)
         return
     found = await with_session(ctx, email, password, lambda client: client.get_cart(), "the cart")
     if as_json:
