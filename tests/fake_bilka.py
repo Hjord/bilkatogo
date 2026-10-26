@@ -54,7 +54,12 @@ class FakeBilka:
         self.details: dict[str, dict[str, Any]] = {
             details["order"]["orderId"]: details
             for details in map(
-                load_fixture, ["order_details_substituted.json", "order_details_plain.json"]
+                load_fixture,
+                [
+                    "order_details_substituted.json",
+                    "order_details_plain.json",
+                    "order_details_missing.json",
+                ],
             )
         }
         self.delivery_addresses: dict[str, Any] = load_fixture("available_delivery_addresses.json")

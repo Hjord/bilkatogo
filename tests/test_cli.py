@@ -275,6 +275,7 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Substitutions",
         "  Æbler -> 4 x Pærer",
         "  Letmælk -> 3 x Minimælk",
+        "Missing Items none",
     ]
     assert len(bilka.calls("gigya_login")) == 1
 
@@ -284,7 +285,40 @@ def test_order_without_substitutions_says_so(invoke) -> None:
 
     assert result.exit_code == 0, result.output
     assert "Pickup Code   87654321" in result.output
-    assert result.output.splitlines()[-1] == "Substitutions none"
+    assert "Substitutions none" in result.output.splitlines()
+
+
+def test_order_lists_missing_items_after_substitutions(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[-5:] == [
+        "Substitutions",
+        "  Letmælk -> 3 x Minimælk",
+        "Missing Items",
+        "  Skyr: 2 of 4 missing",
+        "  Havregryn: 1 of 1 missing",
+    ]
+
+
+def test_order_json_includes_missing_items(invoke) -> None:
+    result = invoke("order", "900000000003", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["missing_items"] == [
+        {
+            "product": "Skyr",
+            "article_number": "932058",
+            "ordered_quantity": 4,
+            "missing_quantity": 2,
+        },
+        {
+            "product": "Havregryn",
+            "article_number": "1006",
+            "ordered_quantity": 1,
+            "missing_quantity": 1,
+        },
+    ]
 
 
 def test_order_json_output(invoke) -> None:

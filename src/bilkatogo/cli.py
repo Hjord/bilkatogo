@@ -226,7 +226,7 @@ async def order(
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Show one Order, or the Current Order, with its Pickup Code and Substitutions."""
+    """Show an Order (default: the Current Order), its Substitutions and Missing Items."""
     if order_number is None:
         details = await with_session(
             ctx, email, password, lambda client: client.get_current_order(), "the current order"
@@ -254,15 +254,30 @@ async def order(
     ]
     for label, value in fields:
         typer.echo(f"{label:<13} {value}")
-    if not details.substitutions:
-        typer.echo("Substitutions none")
-        return
-    typer.echo("Substitutions")
-    for substitution in details.substitutions:
-        typer.echo(
-            f"  {substitution.original_product} -> "
+    print_list(
+        "Substitutions",
+        [
+            f"{substitution.original_product} -> "
             f"{substitution.quantity} x {substitution.replacement_product}"
-        )
+            for substitution in details.substitutions
+        ],
+    )
+    print_list(
+        "Missing Items",
+        [
+            f"{item.product}: {item.missing_quantity} of {item.ordered_quantity} missing"
+            for item in details.missing_items
+        ],
+    )
+
+
+def print_list(label: str, entries: list[str]) -> None:
+    if not entries:
+        typer.echo(f"{label} none")
+        return
+    typer.echo(label)
+    for entry in entries:
+        typer.echo(f"  {entry}")
 
 
 @app.command("pickup-points")
