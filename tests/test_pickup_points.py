@@ -1,6 +1,6 @@
 import pytest
 
-from bilkatogo import BilkaToGoClient
+from bilkatogo import BilkaToGoClient, BilkaToGoError, UnknownPickupPointError
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
 
@@ -56,3 +56,28 @@ async def test_cart_without_a_pickup_point_has_none(bilka: FakeBilka) -> None:
         BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
     ):
         assert await client.get_cart_pickup_point() is None
+
+
+@pytest.mark.asyncio
+async def test_pickup_point_by_name_ignores_case_and_gives_its_store(bilka: FakeBilka) -> None:
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        point = await client.get_pickup_point("pickup fredericia")
+
+    assert point.name == "Pickup Fredericia"
+    assert point.store_id == "1662"
+
+
+@pytest.mark.asyncio
+async def test_unknown_pickup_point_name_raises_naming_it(bilka: FakeBilka) -> None:
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        with pytest.raises(UnknownPickupPointError, match="Bilka Atlantis") as caught:
+            await client.get_pickup_point("Bilka Atlantis")
+
+    assert isinstance(caught.value, BilkaToGoError)
+    assert caught.value.name == "Bilka Atlantis"

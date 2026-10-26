@@ -23,6 +23,7 @@ from .exceptions import (
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
+    UnknownPickupPointError,
 )
 from .models import Order, OrderDetails, PickupPoint, current_order
 from .token_storage import TokenStorage
@@ -116,6 +117,13 @@ class BilkaToGoClient:
     async def get_pickup_points(self) -> list[PickupPoint]:
         data = await self._shop("GET", "shop/v6/AvailableDeliveryAddresses", {"orderByZipcode": 1})
         return [PickupPoint.from_dict(address) for address in data.get("addresses") or []]
+
+    async def get_pickup_point(self, name: str) -> PickupPoint:
+        wanted = name.strip().casefold()
+        for point in await self.get_pickup_points():
+            if point.name.casefold() == wanted:
+                return point
+        raise UnknownPickupPointError(name)
 
     async def get_cart_pickup_point(self) -> PickupPoint | None:
         data = await self._shop("GET", "shop/v6/Cart", CART_PARAMS)

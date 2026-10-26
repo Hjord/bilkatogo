@@ -10,5 +10,13 @@ class BilkaUnreachableError(BilkaToGoError):
     """Bilka could not be reached (connection error or timeout). Retry later."""
 
 
+class UnknownPickupPointError(BilkaToGoError):
+    """No Pickup Point has the given name."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Unknown Pickup Point {name!r}")
+        self.name = name
+
+
 class UnexpectedResponseError(BilkaToGoError):
     """Bilka answered with something the client does not understand. Retry later."""
