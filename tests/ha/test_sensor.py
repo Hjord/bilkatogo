@@ -49,6 +49,7 @@ async def test_order_status_follows_bilka_every_60_minutes(
     bilka: FakeBilka,
     freezer: FrozenDateTimeFactory,
 ) -> None:
+    freezer.move_to("2026-11-02 12:00:00+00:00")
     entry = await setup_integration()
     bilka.orders[0] = {**bilka.orders[0], "status": "Pakket"}
 
@@ -147,6 +148,7 @@ async def test_pickup_code_shows_once_the_current_order_is_packed(
     bilka: FakeBilka,
     freezer: FrozenDateTimeFactory,
 ) -> None:
+    freezer.move_to("2026-11-02 12:00:00+00:00")
     entry = await setup_integration()
     assert sensor_state(hass, entry, "pickup_code").state == STATE_UNKNOWN
     assert bilka.calls("order_details") == []

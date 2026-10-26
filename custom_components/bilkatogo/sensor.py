@@ -2,7 +2,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -18,11 +17,14 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
-from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
+from .coordinator import (
+    BILKA_TIME_ZONE,
+    BilkaToGoConfigEntry,
+    BilkaToGoCoordinator,
+    BilkaToGoData,
+)
 
 PARALLEL_UPDATES = 0
-
-BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
 
 
 @dataclass(frozen=True, kw_only=True)
