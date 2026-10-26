@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import httpx
 import pytest
 
@@ -68,3 +70,23 @@ async def test_ok_answer_with_an_error_body_counts_as_an_expired_session(
 
     assert len(orders) == 2
     assert len(bilka.calls("gigya_login")) == 2
+
+
+@pytest.mark.asyncio
+async def test_stored_session_about_to_expire_is_renewed_before_the_shop_call(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+    assert storage.data is not None
+    soon = datetime.now(UTC) + timedelta(minutes=2)
+    storage.data["jwt_expires_at"] = soon.isoformat()
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        await client.get_orders()
+
+    assert len(bilka.calls("gigya_login")) == 2
+    assert len(bilka.calls("order_history")) == 1
+    assert datetime.fromisoformat(storage.data["jwt_expires_at"]) > soon + timedelta(hours=23)

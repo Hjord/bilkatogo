@@ -11,6 +11,7 @@ from .const import (
     GIGYA_BASE_URL,
     GIGYA_INVALID_LOGIN_ID,
     JWT_LIFETIME_SECONDS,
+    JWT_RENEWAL_MARGIN,
     ORDER_HISTORY_PAGE_SIZE,
     ORDER_HISTORY_PARAMS,
     WEB_PARAMS,
@@ -35,6 +36,7 @@ class BilkaToGoClient:
         self._owns_http = httpx_client is None
         self._http = httpx_client or httpx.AsyncClient(timeout=httpx.Timeout(30.0))
         self._jwt: str | None = None
+        self._jwt_expires_at: datetime | None = None
 
     async def __aenter__(self) -> Self:
         return self
@@ -66,6 +68,7 @@ class BilkaToGoClient:
         if response.status_code != 200:
             raise BilkaToGoError(f"Shop login failed with HTTP {response.status_code}")
         self._jwt = jwt
+        self._jwt_expires_at = expires_at
         if self._token_storage is not None:
             await self._token_storage.save(
                 {
@@ -93,7 +96,7 @@ class BilkaToGoClient:
         return orders
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        jwt = self._jwt or await self._restore_session() or await self._login()
+        jwt = self._valid_jwt() or await self._restore_session() or await self._login()
         data = await self._shop_request(method, path, params, jwt)
         if data is None:
             data = await self._shop_request(method, path, params, await self._login())
@@ -130,12 +133,18 @@ class BilkaToGoClient:
             jwt = session["jwt"]
         except KeyError, TypeError, ValueError:
             return None
-        if expires_at <= datetime.now(UTC):
-            return None
         for name, value in (session.get("cookies") or {}).items():
             self._http.cookies.set(name, value, domain=API_HOST)
         self._jwt = jwt
-        return jwt
+        self._jwt_expires_at = expires_at
+        return self._valid_jwt()
+
+    def _valid_jwt(self) -> str | None:
+        if self._jwt_expires_at is None:
+            return None
+        if self._jwt_expires_at - JWT_RENEWAL_MARGIN <= datetime.now(UTC):
+            return None
+        return self._jwt
 
     async def _gigya_login(self, password: str) -> str:
         data = await self._gigya(
