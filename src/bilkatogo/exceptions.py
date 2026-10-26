@@ -19,9 +19,14 @@ class UnknownPickupPointError(BilkaToGoError):
 
 
 class CartChangeRejectedError(BilkaToGoError):
-    """Bilka applied a different quantity than asked to a Cart Line; the message is Bilka's."""
+    """Bilka applied a different quantity than asked to a Cart Line; the message is Bilka's.
 
-    def __init__(self, message: str, article_number: str, requested: int, applied: int) -> None:
+    `applied` is None when Bilka's answer did not say which quantity it applied.
+    """
+
+    def __init__(
+        self, message: str, article_number: str, requested: int, applied: int | None
+    ) -> None:
         super().__init__(message)
         self.article_number = article_number
         self.requested = requested

@@ -174,6 +174,13 @@ class BilkaToGoClient:
             if message
         ]
         applied = answer.get("productAmount")
+        if not isinstance(applied, int):
+            raise CartChangeRejectedError(
+                " ".join(messages) or f"Bilka did not say what quantity of {article_number} it set",
+                article_number,
+                quantity,
+                None,
+            )
         if applied != quantity:
             raise CartChangeRejectedError(
                 " ".join(messages) or f"Bilka set {article_number} to {applied}, not {quantity}",

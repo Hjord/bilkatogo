@@ -85,6 +85,24 @@ async def test_a_change_applied_with_a_different_quantity_is_rejected_with_bilka
 
 
 @pytest.mark.asyncio
+async def test_a_change_answer_without_the_applied_quantity_is_rejected(
+    logged_in_cart: FakeBilka,
+) -> None:
+    answer = load_fixture("change_line_count.json")
+    del answer["productAmount"]
+    logged_in_cart.script("change_line_count", answer)
+
+    with pytest.raises(
+        CartChangeRejectedError, match="Bilka did not say what quantity of 18364 it set"
+    ) as rejected:
+        await change(logged_in_cart, lambda client: client.set_cart_quantity("18364", 3))
+
+    assert rejected.value.requested == 3
+    assert rejected.value.applied is None
+    assert logged_in_cart.calls("cart") == []
+
+
+@pytest.mark.asyncio
 async def test_add_to_cart_adds_to_the_quantity_of_an_existing_cart_line(
     logged_in_cart: FakeBilka,
 ) -> None:
