@@ -18,6 +18,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("POST", "https://accounts.eu1.gigya.com/accounts.getJWT"): "gigya_jwt",
     ("POST", "https://api.bilkatogo.dk/api/auth/LoginJWT"): "login_jwt",
     ("POST", "https://api.bilkatogo.dk/api/shop/v7/OrderHistory"): "order_history",
+    ("GET", "https://api.bilkatogo.dk/api/shop/v7/OrderDetails"): "order_details",
 }
 
 type Handler = Callable[[httpx.Request], httpx.Response]
@@ -45,6 +46,12 @@ class FakeBilka:
         self.password = password
         self.requests: list[httpx.Request] = []
         self.orders: list[dict[str, Any]] = load_fixture("order_history.json")["orders"]
+        self.details: dict[str, dict[str, Any]] = {
+            details["order"]["orderId"]: details
+            for details in map(
+                load_fixture, ["order_details_substituted.json", "order_details_plain.json"]
+            )
+        }
         self._scripts: dict[str, deque[Scripted]] = defaultdict(deque)
         self.transport = httpx.MockTransport(self._handle)
 
@@ -117,3 +124,11 @@ class FakeBilka:
         offset = int(request.url.params["offset"])
         page = self.orders[offset : offset + limit]
         return httpx.Response(200, json={"total": len(self.orders), "orders": page})
+
+    def order_details(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        details = self.details.get(request.url.params.get("orderId", ""))
+        if details is None:
+            return httpx.Response(404, json={"code": 404, "msg": "Not found"})
+        return httpx.Response(200, json=details)
