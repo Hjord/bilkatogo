@@ -55,21 +55,21 @@ What the Order cost when the customer placed it. The Order Total is compared wit
 _Avoid_: Checkout price, original price
 
 **Deposit**:
-The bottle and can deposit added to the Order Total, shown on the website as "Pant".
+The bottle and can deposit added to the Order Total, shown on the website as "Pant". Bilka's `stat.deposit` on the Order and the Cart.
 
 **Service Fee**:
-What Bilka charges for packing the Order, shown on the website as "Pakkeservice".
+What Bilka charges for packing the Order, shown on the website as "Pakkeservice". Bilka's `stat.packing` on the Order and the Cart.
 _Avoid_: Packing fee, picking fee
 
 **Packaging**:
-What Bilka charges for bags, shown on the website as "Emballage".
+What Bilka charges for bags, shown on the website as "Emballage". Bilka's `stat.packaging_price` on the Order and the Cart.
 _Avoid_: Bags
 
 **Delivery Fee**:
 What Bilka charges for Home Delivery.
 
 **Discount**:
-The total saved on the Order through Offers, membership and vouchers.
+The total saved on the Order through Offers, membership and vouchers. The sum of Bilka's `stat.promo`, `stat.membership_offer_discount`, `stat.personalized_offer_discount` and the `amount` of each voucher in `stat.vouchers`, on the Order and the Cart.
 _Avoid_: Promo, savings
 
 **Home Delivery**:
