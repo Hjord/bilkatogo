@@ -18,6 +18,7 @@ from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
+from .missing_items import missing_item_data
 from .substitutions import substitution_data
 
 PARALLEL_UPDATES = 0
@@ -101,6 +102,16 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
                     substitution_data(substitution) for substitution in data.details.substitutions
                 ]
             }
+            if data.details
+            else None
+        ),
+    ),
+    BilkaToGoSensorDescription(
+        key="missing_items",
+        translation_key="missing_items",
+        value_fn=lambda data: len(data.details.missing_items) if data.details else None,
+        attributes_fn=lambda data: (
+            {"missing_items": [missing_item_data(item) for item in data.details.missing_items]}
             if data.details
             else None
         ),

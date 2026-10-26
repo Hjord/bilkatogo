@@ -231,6 +231,7 @@
           'address': '**REDACTED**',
           'city': '**REDACTED**',
           'name': 'Bilka Eksempelby',
+          'store_id': None,
           'zip_code': '**REDACTED**',
         }),
         'pickup_slot': dict({
@@ -372,6 +373,7 @@
           'address': '**REDACTED**',
           'city': '**REDACTED**',
           'name': 'Bilka Eksempelby',
+          'store_id': None,
           'zip_code': '**REDACTED**',
         }),
         'pickup_slot': dict({

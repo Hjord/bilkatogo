@@ -60,6 +60,14 @@
           }
         }
       },
+      "missing_items": {
+        "name": "Missing items",
+        "state_attributes": {
+          "missing_items": {
+            "name": "Missing items"
+          }
+        }
+      },
       "pickup_slot": {
         "name": "Pickup slot",
         "state_attributes": {

@@ -9,6 +9,7 @@ DOMAIN = "bilkatogo"
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 EVENT_SUBSTITUTION = f"{DOMAIN}_substitution"
+EVENT_MISSING_ITEM = f"{DOMAIN}_missing_item"
 
 UPDATE_INTERVAL = timedelta(minutes=60)
 FAST_UPDATE_INTERVAL = timedelta(minutes=5)

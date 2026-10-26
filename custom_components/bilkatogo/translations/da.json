@@ -60,6 +60,14 @@
           }
         }
       },
+      "missing_items": {
+        "name": "Manglende varer",
+        "state_attributes": {
+          "missing_items": {
+            "name": "Manglende varer"
+          }
+        }
+      },
       "pickup_slot": {
         "name": "Afhentningstidspunkt",
         "state_attributes": {

@@ -20,6 +20,7 @@ from bilkatogo import (
 )
 
 from .const import DOMAIN, FAST_UPDATE_INTERVAL, FAST_UPDATE_LEAD_TIME, LOGGER, UPDATE_INTERVAL
+from .missing_items import MissingItemAnnouncer
 from .substitutions import SubstitutionAnnouncer
 
 DETAILS_STATUSES = frozenset(
@@ -59,9 +60,11 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         )
         self.client = client
         self.announcer = SubstitutionAnnouncer(hass, entry.entry_id)
+        self.missing_item_announcer = MissingItemAnnouncer(hass, entry.entry_id)
 
     async def _async_setup(self) -> None:
         await self.announcer.async_load()
+        await self.missing_item_announcer.async_load()
 
     async def _async_update_data(self) -> BilkaToGoData:
         try:
@@ -82,6 +85,7 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         self.update_interval = polling_interval(order, dt_util.utcnow())
         if details:
             await self.announcer.async_announce(details)
+            await self.missing_item_announcer.async_announce(details)
         return BilkaToGoData(order=order, details=details)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
