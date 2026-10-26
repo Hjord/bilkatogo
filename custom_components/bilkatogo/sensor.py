@@ -2,6 +2,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -14,18 +15,44 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from bilkatogo import OrderStatus
+from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
 
 PARALLEL_UPDATES = 0
 
+BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
+
 
 @dataclass(frozen=True, kw_only=True)
 class BilkaToGoSensorDescription(SensorEntityDescription):
     value_fn: Callable[[BilkaToGoData], StateType | datetime]
     attributes_fn: Callable[[BilkaToGoData], Mapping[str, Any] | None] = lambda _: None
+
+
+def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
+    slot = order.pickup_slot if order else None
+    if slot is None:
+        return None
+    moment = slot.start if start else slot.end
+    return datetime.combine(slot.date, moment, BILKA_TIME_ZONE)
+
+
+def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
+    order = data.order
+    if order is None:
+        return None
+    price = order.packed_price or order.ordered_price
+    return {"order_number": order.order_number, "price": price / 100}
+
+
+def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
+    attributes = _order_attributes(data)
+    if attributes is None:
+        return None
+    end = _slot_time(data.order, start=False)
+    return attributes | {"pickup_slot_end": end.isoformat() if end else None}
 
 
 SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
@@ -36,6 +63,29 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         options=[status.value for status in OrderStatus],
         value_fn=lambda data: data.order.status.value if data.order else None,
         attributes_fn=lambda data: {"status_code": data.order.status_code} if data.order else None,
+    ),
+    BilkaToGoSensorDescription(
+        key="pickup_slot",
+        translation_key="pickup_slot",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data: _slot_time(data.order, start=True),
+        attributes_fn=_slot_attributes,
+    ),
+    BilkaToGoSensorDescription(
+        key="pickup_point",
+        translation_key="pickup_point",
+        value_fn=lambda data: (
+            data.order.pickup_point.name if data.order and data.order.pickup_point else None
+        ),
+        attributes_fn=_order_attributes,
+    ),
+    BilkaToGoSensorDescription(
+        key="pickup_code",
+        translation_key="pickup_code",
+        value_fn=lambda data: (
+            data.details.pickup_code.code if data.details and data.details.pickup_code else None
+        ),
+        attributes_fn=_order_attributes,
     ),
 )
 

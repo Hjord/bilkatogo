@@ -41,6 +41,42 @@
             "name": "Bilka-statuskode"
           }
         }
+      },
+      "pickup_slot": {
+        "name": "Afhentningstidspunkt",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          },
+          "pickup_slot_end": {
+            "name": "Afhentning slutter"
+          }
+        }
+      },
+      "pickup_code": {
+        "name": "Afhentningskode",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          }
+        }
+      },
+      "pickup_point": {
+        "name": "Afhentningssted",
+        "state_attributes": {
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "price": {
+            "name": "Pris"
+          }
+        }
       }
     }
   },

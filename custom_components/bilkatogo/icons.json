@@ -3,6 +3,15 @@
     "sensor": {
       "order_status": {
         "default": "mdi:basket"
+      },
+      "pickup_slot": {
+        "default": "mdi:clock-outline"
+      },
+      "pickup_code": {
+        "default": "mdi:numeric"
+      },
+      "pickup_point": {
+        "default": "mdi:store-marker"
       }
     }
   }
