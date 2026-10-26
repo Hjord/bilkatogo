@@ -7,7 +7,16 @@ from .exceptions import (
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import Order, OrderStatus, PickupPoint, PickupSlot
+from .models import (
+    Order,
+    OrderDetails,
+    OrderLine,
+    OrderStatus,
+    PickupCode,
+    PickupPoint,
+    PickupSlot,
+    Substitution,
+)
 from .token_storage import FileTokenStorage, TokenStorage
 
 try:
@@ -22,9 +31,13 @@ __all__ = [
     "FileTokenStorage",
     "InvalidCredentialsError",
     "Order",
+    "OrderDetails",
+    "OrderLine",
     "OrderStatus",
+    "PickupCode",
     "PickupPoint",
     "PickupSlot",
+    "Substitution",
     "TokenStorage",
     "UnexpectedResponseError",
     "__version__",

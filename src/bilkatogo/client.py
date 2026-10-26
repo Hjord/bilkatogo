@@ -17,11 +17,12 @@ from .const import (
     WEB_PARAMS,
 )
 from .exceptions import (
+    BilkaToGoError,
     BilkaUnreachableError,
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import Order
+from .models import Order, OrderDetails
 from .token_storage import TokenStorage
 
 
@@ -98,6 +99,13 @@ class BilkaToGoClient:
             if len(page) < page_size:
                 break
         return orders
+
+    async def get_order(self, order_number: str) -> OrderDetails:
+        data = await self._shop("GET", "shop/v7/OrderDetails", {"orderId": order_number})
+        order = data.get("order")
+        if not order:
+            raise BilkaToGoError(f"Order {order_number} was not found")
+        return OrderDetails.from_dict(order)
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()

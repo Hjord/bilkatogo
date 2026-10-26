@@ -2,7 +2,7 @@ import asyncio
 import functools
 import json
 import sys
-from collections.abc import Callable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine
 from datetime import date, datetime, time
 from typing import Annotated, Any
 
@@ -17,7 +17,7 @@ from .exceptions import (
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import BilkaDataClass, Order
+from .models import BilkaDataClass, Order, OrderStatus, PickupPoint, PickupSlot
 from .token_storage import FileTokenStorage
 
 app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
@@ -126,6 +126,39 @@ async def login(
         typer.echo(f"Logged in as {email}.")
 
 
+async def with_session[T](
+    ctx: typer.Context,
+    email: str | None,
+    password: str | None,
+    fetch: Callable[[BilkaToGoClient], Awaitable[T]],
+    what: str,
+) -> T:
+    storage = FileTokenStorage(config.session_file())
+    email, password = known_credentials(email, password)
+    if email is None:
+        session = await storage.load()
+        email = (session or {}).get("email") or typer.prompt("Email")
+    http = http_client(ctx)
+    try:
+        try:
+            async with BilkaToGoClient(
+                email, password, token_storage=storage, httpx_client=http
+            ) as client:
+                return await fetch(client)
+        except InvalidCredentialsError:
+            if password is not None:
+                raise
+            async with BilkaToGoClient(
+                email, prompt_password(), token_storage=storage, httpx_client=http
+            ) as client:
+                return await fetch(client)
+    except BilkaToGoError as err:
+        raise failure(f"Could not fetch {what}", err) from None
+    finally:
+        if http is not None:
+            await http.aclose()
+
+
 LimitOption = Annotated[int, typer.Option("--limit", min=1, help="Number of orders to show.")]
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -140,31 +173,9 @@ async def orders(
     as_json: JsonOption = False,
 ) -> None:
     """Show your Orders with their Pickup Slot and Order Status."""
-    storage = FileTokenStorage(config.session_file())
-    email, password = known_credentials(email, password)
-    if email is None:
-        session = await storage.load()
-        email = (session or {}).get("email") or typer.prompt("Email")
-    http = http_client(ctx)
-    try:
-        try:
-            async with BilkaToGoClient(
-                email, password, token_storage=storage, httpx_client=http
-            ) as client:
-                found = await client.get_orders(limit=limit)
-        except InvalidCredentialsError:
-            if password is not None:
-                raise
-            async with BilkaToGoClient(
-                email, prompt_password(), token_storage=storage, httpx_client=http
-            ) as client:
-                found = await client.get_orders(limit=limit)
-    except BilkaToGoError as err:
-        raise failure("Could not fetch orders", err) from None
-    finally:
-        if http is not None:
-            await http.aclose()
-
+    found = await with_session(
+        ctx, email, password, lambda client: client.get_orders(limit=limit), "orders"
+    )
     if as_json:
         typer.echo(to_json(found))
     elif not found:
@@ -177,17 +188,70 @@ async def orders(
 
 
 def order_row(order: Order) -> list[str]:
-    slot = order.pickup_slot
-    point = order.pickup_point
     return [
         order.order_number,
         order.ordered_at.strftime("%Y-%m-%d %H:%M") if order.ordered_at else "",
-        f"{WEEKDAYS[slot.date.weekday()]} {slot.date:%d/%m} {slot.start:%H:%M}-{slot.end:%H:%M}"
-        if slot
-        else "",
-        "Home Delivery" if order.home_delivery else (point.name if point else ""),
-        order.status.name.replace("_", " ").title(),
+        format_slot(order.pickup_slot),
+        format_point(order.pickup_point, order.home_delivery),
+        format_status(order.status),
     ]
+
+
+def format_slot(slot: PickupSlot | None) -> str:
+    if slot is None:
+        return ""
+    return f"{WEEKDAYS[slot.date.weekday()]} {slot.date:%d/%m} {slot.start:%H:%M}-{slot.end:%H:%M}"
+
+
+def format_point(point: PickupPoint | None, home_delivery: bool) -> str:
+    return "Home Delivery" if home_delivery else (point.name if point else "")
+
+
+def format_status(status: OrderStatus) -> str:
+    return status.name.replace("_", " ").title()
+
+
+OrderNumberArgument = Annotated[str, typer.Argument(help="Order Number, e.g. 900000000001.")]
+
+
+@app.command()
+@run_async
+async def order(
+    ctx: typer.Context,
+    order_number: OrderNumberArgument,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Show one Order with its Pickup Code and Substitutions."""
+    details = await with_session(
+        ctx,
+        email,
+        password,
+        lambda client: client.get_order(order_number),
+        f"order {order_number}",
+    )
+    if as_json:
+        typer.echo(to_json(details))
+        return
+    fields = [
+        ("Order", details.order_number),
+        ("Status", format_status(details.status)),
+        ("Pickup Slot", format_slot(details.pickup_slot)),
+        ("Pickup Point", format_point(details.pickup_point, details.home_delivery)),
+        ("Pickup Code", details.pickup_code.code if details.pickup_code else ""),
+    ]
+    for label, value in fields:
+        typer.echo(f"{label:<13} {value}")
+    if not details.substitutions:
+        typer.echo("Substitutions none")
+        return
+    typer.echo("Substitutions")
+    for substitution in details.substitutions:
+        typer.echo(
+            f"  {substitution.quantity} x {substitution.original_product} -> "
+            f"{substitution.replacement_quantity} x {substitution.replacement_product}"
+        )
 
 
 def main() -> None:
