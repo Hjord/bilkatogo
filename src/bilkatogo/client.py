@@ -15,7 +15,7 @@ from .const import (
     ORDER_HISTORY_PARAMS,
     WEB_PARAMS,
 )
-from .exceptions import BilkaToGoError, InvalidCredentialsError
+from .exceptions import BilkaToGoError, InvalidCredentialsError, UnexpectedResponseError
 from .models import Order
 from .token_storage import TokenStorage
 
@@ -81,7 +81,8 @@ class BilkaToGoClient:
         orders: list[Order] = []
         while len(orders) < limit:
             page_size = min(ORDER_HISTORY_PAGE_SIZE, limit - len(orders))
-            data = await self._shop_post(
+            data = await self._shop(
+                "POST",
                 "shop/v7/OrderHistory",
                 {"limit": page_size, "offset": offset + len(orders), **ORDER_HISTORY_PARAMS},
             )
@@ -91,16 +92,24 @@ class BilkaToGoClient:
                 break
         return orders
 
-    async def _shop_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+    async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._jwt or await self._restore_session() or await self._login()
-        response = await self._http.post(
+        response = await self._shop_request(method, path, params, jwt)
+        if response.status_code == 401:
+            response = await self._shop_request(method, path, params, await self._login())
+        if response.status_code != 200:
+            raise UnexpectedResponseError(f"{path} failed with HTTP {response.status_code}")
+        return response.json()
+
+    async def _shop_request(
+        self, method: str, path: str, params: dict[str, Any], jwt: str
+    ) -> httpx.Response:
+        return await self._http.request(
+            method,
             f"{API_BASE_URL}/{path}",
             params={**WEB_PARAMS, **params},
             headers={"jwt_token": jwt},
         )
-        if response.status_code != 200:
-            raise BilkaToGoError(f"{path} failed with HTTP {response.status_code}")
-        return response.json()
 
     async def _restore_session(self) -> str | None:
         if self._token_storage is None:
