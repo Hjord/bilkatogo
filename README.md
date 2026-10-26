@@ -82,6 +82,8 @@ asyncio.run(main())
   (e.g. asking you to call customer service before ordering 99). When Bilka applies a different
   quantity than asked, they raise `CartChangeRejectedError` with Bilka's message. The client
   never places an Order.
+- `get_cart_json()`, `get_order_json(order)` and `get_current_order_json()` return Bilka's
+  answer untouched; `bilkatogo.redact.redact()` replaces the personal data in it.
 
 ## Command line
 
@@ -130,6 +132,23 @@ again.
 
 The Current Order is the unfinished order with the earliest pickup slot or, when every order
 is finished, the most recently finished one.
+
+### Capturing a fixture
+
+When an Order or the Cart shows something the CLI gets wrong, such as a Missing Item or a
+Discount, `--raw` on `order` and `cart` prints Bilka's JSON as received, so it can become a test
+fixture. Add `--redact` to replace your personal data with placeholders before sharing it:
+name, email, address, phone, Pickup Code, Order Number (`9000000000xx`) and the customer ids
+`uid` and `tid`. Pickup Points are public and stay.
+
+```sh
+bilkatogo order 900000000001 --raw --redact > order_details_missing.json
+bilkatogo cart --raw --redact > cart.json
+```
+
+Read the file and search it for your name, email and address before attaching it to an
+[issue](https://github.com/nickknissen/bilkatogo/issues); redaction covers the fields Bilka is
+known to send, not every field it might add. `--redact` only works together with `--raw`.
 
 ## Home Assistant
 
