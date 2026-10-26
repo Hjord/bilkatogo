@@ -2,6 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 from typer.testing import CliRunner
 
@@ -215,3 +216,42 @@ def test_orders_when_there_are_none(invoke, bilka: FakeBilka) -> None:
 
     assert result.exit_code == 0, result.output
     assert "No orders" in result.output
+
+
+@pytest.mark.parametrize("command", ["login", "orders"])
+@pytest.mark.parametrize(
+    ("route", "failure", "message"),
+    [
+        ("gigya_login", httpx.ConnectError("fake: refused"), "Could not reach Bilka"),
+        ("login_jwt", httpx.ReadTimeout("fake: timed out"), "Could not reach Bilka"),
+        ("login_jwt", httpx.Response(503, text="<html>Down</html>"), "Bilka answered unexpectedly"),
+    ],
+)
+def test_failures_print_a_clear_message_and_exit_non_zero(
+    invoke, bilka: FakeBilka, command: str, route: str, failure, message: str
+) -> None:
+    bilka.script(route, failure)
+
+    result = invoke(command, "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 1
+    assert message in result.output
+    assert "Traceback" not in result.output
+
+
+@pytest.mark.parametrize(
+    ("failure", "message"),
+    [
+        (httpx.ConnectError("fake: refused"), "Could not reach Bilka"),
+        (httpx.Response(200, text="<html>Vedligehold</html>"), "Bilka answered unexpectedly"),
+    ],
+)
+def test_orders_failures_on_the_order_history_call(
+    invoke, bilka: FakeBilka, failure, message: str
+) -> None:
+    bilka.script("order_history", failure)
+
+    result = invoke("orders", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 1
+    assert message in result.output
