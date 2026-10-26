@@ -12,5 +12,6 @@ API_BASE_URL = f"https://{API_HOST}/api"
 WEB_PARAMS = {"u": "w"}
 ORDER_HISTORY_PAGE_SIZE = 20
 ORDER_HISTORY_PARAMS = {"muah": 1, "ordertype": "dibs,pgw"}
+CART_PARAMS = {"extra": "deliveryAddress,deliveryDate"}
 CURRENT_ORDER_SCAN_LIMIT = 20
 BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
