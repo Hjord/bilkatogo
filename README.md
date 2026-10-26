@@ -57,8 +57,8 @@ asyncio.run(main())
   logs in again when Bilka rejects it.
 - `token_storage` is any `TokenStorage` (async `load()` and `save(data)`). `FileTokenStorage`
   stores the session in a JSON file.
-- Errors derive from `BilkaToGoError`: `InvalidCredentialsError`, `BilkaUnreachableError` and
-  `UnexpectedResponseError`.
+- Errors derive from `BilkaToGoError`: `InvalidCredentialsError`, `BilkaUnreachableError`,
+  `UnexpectedResponseError`, `UnknownPickupPointError` and `CartChangeRejectedError`.
 - `Order.status` is an `OrderStatus` (Processing, Received, Packed, Picked Up, Not Collected,
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
@@ -75,6 +75,13 @@ asyncio.run(main())
   applied in the line total), the Cart `total` broken down into `deposit`, `service_fee`,
   `packaging` and `discount`, and the chosen `pickup_point`. Bilka's bag and Pakkeservice lines
   are not Cart Lines; they show up as `packaging` and `service_fee`.
+- `set_cart_quantity(article_number, quantity)` sets how many of a Product the Cart holds (0
+  removes the Cart Line), `add_to_cart(article_number, quantity=1)` adds to what is there,
+  `remove_from_cart(article_number)` removes it and `clear_cart()` empties the Cart. Each returns
+  the Cart as read after the change, with Bilka's messages about the change in `Cart.warnings`
+  (e.g. asking you to call customer service before ordering 99). When Bilka applies a different
+  quantity than asked, they raise `CartChangeRejectedError` with Bilka's message. The client
+  never places an Order.
 
 ## Command line
 
@@ -97,7 +104,14 @@ bilkatogo pickup-points         # list Pickup Points and their Store, * marks yo
 bilkatogo search skyr           # Products with Article Number, Price, stock and Offer at your Cart's Store
 bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
 bilkatogo cart                  # your Cart Lines, the Cart total and your Pickup Point
+bilkatogo cart add 18381 --quantity 2   # add 2 of a Product by Article Number
+bilkatogo cart set 18381 5      # hold exactly 5
+bilkatogo cart remove 18381     # take it out of the Cart
 ```
+
+`cart add`, `set` and `remove` change the Cart without asking and print the updated Cart and any
+warning from Bilka. When Bilka applies a different quantity than asked they print Bilka's
+message and exit 1. There is no command to empty the Cart.
 
 Every command accepts `--json` for machine-readable output.
 
