@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 from bilkatogo import FileTokenStorage
 from bilkatogo.cli import app
-from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, algolia_query, form
+from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, algolia_query, form, load_fixture
 
 
 @pytest.fixture
@@ -630,6 +630,100 @@ def test_cart_json(invoke, logged_in_cart: FakeBilka) -> None:
     assert cart["discount"] == "9.50"
     assert cart["pickup_point"]["name"] == "Bilka Vejle"
     assert cart["pickup_point"]["store_id"] == "1661"
+
+
+def test_cart_set_prints_the_updated_cart(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "set", "18364", "3", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    [request] = logged_in_cart.calls("change_line_count")
+    assert request.url.params["count"] == "3"
+    agurk = next(row for row in result.output.splitlines() if "Agurk" in row)
+    assert agurk.split()[2:] == ["3", "7.00", "kr", "21.00", "kr"]
+    assert "Cart Total" in result.output
+
+
+def test_cart_add_adds_the_quantity_to_the_cart_line(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke(
+        "cart", "add", "18381", "--quantity", "2", "--email", EMAIL, "--password", PASSWORD
+    )
+
+    assert result.exit_code == 0, result.output
+    bananas = next(row for row in result.output.splitlines() if "Bananer" in row)
+    assert bananas.split()[2] == "12"
+
+
+def test_cart_add_defaults_to_one(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "add", "19753", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    [request] = logged_in_cart.calls("change_line_count")
+    assert request.url.params["count"] == "1"
+    assert "Skyr m. vanilje" in result.output
+
+
+def test_cart_remove_drops_the_cart_line(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "remove", "18364", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    [request] = logged_in_cart.calls("change_line_count")
+    assert request.url.params["count"] == "0"
+    assert "Agurk" not in result.output
+    assert "Bananer" in result.output
+
+
+def test_cart_change_prints_bilkas_warning_and_succeeds(invoke, logged_in_cart: FakeBilka) -> None:
+    logged_in_cart.change_answer = load_fixture("change_line_count_warning.json")
+
+    result = invoke("cart", "set", "18364", "99", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[-1] == (
+        "Warning from Bilka: Ring venligst til kundeservice på 89 30 30 00 inden bestilling, "
+        "for at sikre det ønskede antal"
+    )
+
+
+def test_cart_change_rejected_prints_bilkas_message_and_fails(
+    invoke, logged_in_cart: FakeBilka
+) -> None:
+    logged_in_cart.max_quantity = 2
+    logged_in_cart.change_answer = {
+        **load_fixture("change_line_count.json"),
+        "offerLimitMessage": "Maks. 2 pr. kunde",
+    }
+
+    result = invoke(
+        "cart", "add", "18364", "--quantity", "4", "--email", EMAIL, "--password", PASSWORD
+    )
+
+    assert result.exit_code == 1
+    assert "Could not change the cart: Maks. 2 pr. kunde" in result.output
+    assert "Cart Total" not in result.output
+
+
+@pytest.mark.parametrize(
+    "args",
+    [("add", "18364"), ("set", "18364", "2"), ("remove", "18381")],
+)
+def test_cart_changes_print_the_updated_cart_as_json_with_warnings(
+    invoke, logged_in_cart: FakeBilka, args: tuple[str, ...]
+) -> None:
+    result = invoke("cart", *args, "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    cart = json.loads(result.output)
+    quantities = {line["article_number"]: line["quantity"] for line in cart["lines"]}
+    assert quantities.get(args[1], 0) == {"add": 2, "set": 2, "remove": 0}[args[0]]
+    assert cart["warnings"] == []
+    assert cart["pickup_point"]["name"] == "Bilka Vejle"
+
+
+def test_there_is_no_cart_clear_command(invoke, logged_in_cart: FakeBilka) -> None:
+    result = invoke("cart", "clear", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code != 0
+    assert logged_in_cart.calls("empty_cart") == []
 
 
 def test_entry_point_without_the_cli_extra_explains_how_to_install_it(

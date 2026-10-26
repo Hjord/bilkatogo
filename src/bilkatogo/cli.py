@@ -19,7 +19,16 @@ from .exceptions import (
     InvalidCredentialsError,
     UnexpectedResponseError,
 )
-from .models import BilkaDataClass, Offer, Order, OrderStatus, PickupPoint, PickupSlot, Product
+from .models import (
+    BilkaDataClass,
+    Cart,
+    Offer,
+    Order,
+    OrderStatus,
+    PickupPoint,
+    PickupSlot,
+    Product,
+)
 from .token_storage import FileTokenStorage
 
 app = typer.Typer(no_args_is_help=True, help="Track your BilkaToGo orders.")
@@ -136,6 +145,8 @@ async def with_session[T](
     password: str | None,
     fetch: Callable[[BilkaToGoClient], Awaitable[T]],
     what: str,
+    *,
+    action: str = "Could not fetch",
 ) -> T:
     storage = FileTokenStorage(config.session_file())
     email, password = known_credentials(email, password)
@@ -157,7 +168,7 @@ async def with_session[T](
             ) as client:
                 return await fetch(client)
     except BilkaToGoError as err:
-        raise failure(f"Could not fetch {what}", err) from None
+        raise failure(f"{action} {what}", err) from None
     finally:
         if http is not None:
             await http.aclose()
@@ -394,7 +405,11 @@ def format_offer(offer: Offer) -> str:
     return text
 
 
-@app.command()
+cart_app = typer.Typer(help="Show or change your Cart.")
+app.add_typer(cart_app, name="cart")
+
+
+@cart_app.callback(invoke_without_command=True)
 @run_async
 async def cart(
     ctx: typer.Context,
@@ -403,10 +418,90 @@ async def cart(
     as_json: JsonOption = False,
 ) -> None:
     """Show your Cart: its Cart Lines, the Cart total and your Pickup Point."""
+    if ctx.invoked_subcommand is not None:
+        return
     found = await with_session(ctx, email, password, lambda client: client.get_cart(), "the cart")
     if as_json:
         typer.echo(to_json(found))
         return
+    print_cart(found)
+
+
+ArticleArgument = Annotated[str, typer.Argument(help="Article Number, e.g. 18381.")]
+
+
+@cart_app.command("add")
+@run_async
+async def cart_add(
+    ctx: typer.Context,
+    article_number: ArticleArgument,
+    quantity: Annotated[int, typer.Option("--quantity", min=1, help="How many to add.")] = 1,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Add a Product to your Cart."""
+    await change_cart(
+        ctx,
+        email,
+        password,
+        as_json,
+        lambda client: client.add_to_cart(article_number, quantity),
+    )
+
+
+@cart_app.command("set")
+@run_async
+async def cart_set(
+    ctx: typer.Context,
+    article_number: ArticleArgument,
+    quantity: Annotated[int, typer.Argument(min=0, help="The new quantity; 0 removes it.")],
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Set the quantity of a Product in your Cart."""
+    await change_cart(
+        ctx,
+        email,
+        password,
+        as_json,
+        lambda client: client.set_cart_quantity(article_number, quantity),
+    )
+
+
+@cart_app.command("remove")
+@run_async
+async def cart_remove(
+    ctx: typer.Context,
+    article_number: ArticleArgument,
+    email: EmailOption = None,
+    password: PasswordOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Remove a Product from your Cart."""
+    await change_cart(
+        ctx, email, password, as_json, lambda client: client.remove_from_cart(article_number)
+    )
+
+
+async def change_cart(
+    ctx: typer.Context,
+    email: str | None,
+    password: str | None,
+    as_json: bool,
+    change: Callable[[BilkaToGoClient], Awaitable[Cart]],
+) -> None:
+    found = await with_session(ctx, email, password, change, "the cart", action="Could not change")
+    if as_json:
+        typer.echo(to_json(found))
+        return
+    print_cart(found)
+    for warning in found.warnings:
+        typer.echo(f"Warning from Bilka: {warning}")
+
+
+def print_cart(found: Cart) -> None:
     if found.lines:
         print_table(
             ["Article", "Product", "Quantity", "Price", "Line Total"],
