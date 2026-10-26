@@ -51,6 +51,14 @@
             "name": "Bilka-statuskode"
           }
         }
+      },
+      "substitutions": {
+        "name": "Erstatningsvarer",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Erstatningsvarer"
+          }
+        }
       }
     }
   },

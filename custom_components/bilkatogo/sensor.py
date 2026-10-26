@@ -37,6 +37,25 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         value_fn=lambda data: data.order.status.value if data.order else None,
         attributes_fn=lambda data: {"status_code": data.order.status_code} if data.order else None,
     ),
+    BilkaToGoSensorDescription(
+        key="substitutions",
+        translation_key="substitutions",
+        value_fn=lambda data: len(data.details.substitutions) if data.details else None,
+        attributes_fn=lambda data: (
+            {
+                "substitutions": [
+                    {
+                        "original_product": substitution.original_product,
+                        "replacement_product": substitution.replacement_product,
+                        "quantity": substitution.quantity,
+                    }
+                    for substitution in data.details.substitutions
+                ]
+            }
+            if data.details
+            else None
+        ),
+    ),
 )
 
 

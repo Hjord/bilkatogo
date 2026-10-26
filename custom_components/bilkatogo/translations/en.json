@@ -51,6 +51,14 @@
             "name": "Bilka status code"
           }
         }
+      },
+      "substitutions": {
+        "name": "Substitutions",
+        "state_attributes": {
+          "substitutions": {
+            "name": "Substitutions"
+          }
+        }
       }
     }
   },

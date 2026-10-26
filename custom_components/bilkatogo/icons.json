@@ -3,6 +3,9 @@
     "sensor": {
       "order_status": {
         "default": "mdi:basket"
+      },
+      "substitutions": {
+        "default": "mdi:swap-horizontal"
       }
     }
   }
