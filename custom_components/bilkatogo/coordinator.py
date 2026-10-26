@@ -25,6 +25,10 @@ from .substitutions import SubstitutionAnnouncer
 
 BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
 
+DETAILS_STATUSES = frozenset(
+    {OrderStatus.PACKED, OrderStatus.NOT_COLLECTED, OrderStatus.CANCELLED, OrderStatus.SOLD_OUT}
+)
+
 type BilkaToGoConfigEntry = ConfigEntry[BilkaToGoCoordinator]
 
 
@@ -88,16 +92,19 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         return BilkaToGoData(order=order, details=details)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
-        """Fetch Order Details while the Current Order is Packed.
+        """Fetch Order Details once the Current Order is Packed or later.
 
-        Earlier there is nothing to show yet, and once it is Picked Up nothing changes,
-        so the details last fetched for the same Order are kept instead.
+        Before Packed there is nothing to show yet. A Picked Up Order no longer changes, so
+        its details are fetched only if none are kept for it yet (after a restart, or when
+        Packed fell between two polls) and then kept.
         """
         if order is None:
             return None
-        if order.status is OrderStatus.PACKED:
-            return await self.client.get_order(order.order_number)
         previous = self.data.details if self.data else None
-        if previous and previous.order_number == order.order_number:
-            return previous
+        if order.status is OrderStatus.PICKED_UP:
+            if previous and previous.order_number == order.order_number:
+                return previous
+            return await self.client.get_order(order.order_number)
+        if order.status in DETAILS_STATUSES:
+            return await self.client.get_order(order.order_number)
         return None
