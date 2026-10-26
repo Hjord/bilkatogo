@@ -51,3 +51,20 @@ async def test_unauthorized_again_after_a_fresh_login_raises_instead_of_looping(
 
     assert len(bilka.calls("order_history")) == 2
     assert len(bilka.calls("gigya_login")) == 2
+
+
+@pytest.mark.asyncio
+async def test_ok_answer_with_an_error_body_counts_as_an_expired_session(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+    bilka.script("order_history", {"code": 1, "msg": "Du er ikke logget ind"})
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        orders = await client.get_orders()
+
+    assert len(orders) == 2
+    assert len(bilka.calls("gigya_login")) == 2

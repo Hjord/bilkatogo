@@ -94,22 +94,30 @@ class BilkaToGoClient:
 
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._jwt or await self._restore_session() or await self._login()
-        response = await self._shop_request(method, path, params, jwt)
-        if response.status_code == 401:
-            response = await self._shop_request(method, path, params, await self._login())
-        if response.status_code != 200:
-            raise UnexpectedResponseError(f"{path} failed with HTTP {response.status_code}")
-        return response.json()
+        data = await self._shop_request(method, path, params, jwt)
+        if data is None:
+            data = await self._shop_request(method, path, params, await self._login())
+        if data is None:
+            raise UnexpectedResponseError(f"{path} rejected a fresh session")
+        return data
 
     async def _shop_request(
         self, method: str, path: str, params: dict[str, Any], jwt: str
-    ) -> httpx.Response:
-        return await self._http.request(
+    ) -> dict[str, Any] | None:
+        response = await self._http.request(
             method,
             f"{API_BASE_URL}/{path}",
             params={**WEB_PARAMS, **params},
             headers={"jwt_token": jwt},
         )
+        if response.status_code == 401:
+            return None
+        if response.status_code != 200:
+            raise UnexpectedResponseError(f"{path} failed with HTTP {response.status_code}")
+        data = response.json()
+        if "code" in data and "msg" in data:
+            return None
+        return data
 
     async def _restore_session(self) -> str | None:
         if self._token_storage is None:
