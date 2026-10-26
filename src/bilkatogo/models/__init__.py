@@ -5,6 +5,7 @@ from .order import OrderStatus as OrderStatus
 from .order import PickupPoint as PickupPoint
 from .order import PickupSlot as PickupSlot
 from .order import current_order as current_order
+from .order_details import MissingItem as MissingItem
 from .order_details import OrderDetails as OrderDetails
 from .order_details import OrderLine as OrderLine
 from .order_details import PickupCode as PickupCode
