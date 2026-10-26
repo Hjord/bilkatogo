@@ -215,3 +215,64 @@ def test_orders_when_there_are_none(invoke, bilka: FakeBilka) -> None:
 
     assert result.exit_code == 0, result.output
     assert "No orders" in result.output
+
+
+def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> None:
+    invoke("login", "--email", EMAIL, "--password", PASSWORD)
+
+    result = invoke("order", "900000000001")
+
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines() == [
+        "Order         900000000001",
+        "Status        Picked Up",
+        "Pickup Slot   Tue 27/10 12:00-14:00",
+        "Pickup Point  Bilka Eksempelby",
+        "Pickup Code   12345678",
+        "Substitutions",
+        "  4 x Æbler -> 4 x Pærer",
+        "  2 x Letmælk -> 2 x Minimælk",
+    ]
+    assert len(bilka.calls("gigya_login")) == 1
+
+
+def test_order_without_substitutions_says_so(invoke) -> None:
+    result = invoke("order", "900000000002", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 0, result.output
+    assert "Pickup Code   87654321" in result.output
+    assert result.output.splitlines()[-1] == "Substitutions none"
+
+
+def test_order_json_output(invoke) -> None:
+    result = invoke("order", "900000000001", "--email", EMAIL, "--password", PASSWORD, "--json")
+
+    assert result.exit_code == 0, result.output
+    details = json.loads(result.output)
+    assert details["order_number"] == "900000000001"
+    assert details["status"] == "picked_up"
+    assert details["pickup_slot"] == {"date": "2026-10-27", "start": "12:00:00", "end": "14:00:00"}
+    assert details["pickup_point"]["name"] == "Bilka Eksempelby"
+    assert details["pickup_code"] == {"code": "12345678"}
+    assert details["substitutions"][0] == {
+        "original_product": "Æbler",
+        "replacement_product": "Pærer",
+        "quantity": 4,
+        "replacement_quantity": 4,
+    }
+    assert details["lines"][1] == {
+        "category": "Frugt & grønt",
+        "product_id": 1003,
+        "name": "Rugbrød",
+        "quantity": 1,
+        "amount": 2500,
+        "substituted": False,
+        "unavailable_reason": "",
+    }
+
+
+def test_order_that_does_not_exist_fails_clearly(invoke) -> None:
+    result = invoke("order", "900000000099", "--email", EMAIL, "--password", PASSWORD)
+
+    assert result.exit_code == 1
+    assert "Could not fetch order 900000000099" in result.output
