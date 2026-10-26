@@ -155,6 +155,21 @@ async def test_offer_with_a_limit_per_customer(bilka: FakeBilka) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("offer_max", "limit"), [("3", 3), ("0", None), ("", None), ("lots", None), (None, None)]
+)
+async def test_limit_per_customer_is_a_whole_number_or_none(
+    bilka: FakeBilka, offer_max: object, limit: int | None
+) -> None:
+    bilka.products[1]["storeData"]["1653"]["offerMax"] = offer_max
+
+    [_, product] = await search(bilka, "skyr")
+
+    assert product.offer is not None
+    assert product.offer.limit_per_customer == limit
+
+
+@pytest.mark.asyncio
 async def test_unreachable_algolia_raises_unreachable(bilka: FakeBilka) -> None:
     bilka.script("algolia", httpx.ConnectError("no route to host"))
 
