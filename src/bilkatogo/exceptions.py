@@ -18,5 +18,15 @@ class UnknownPickupPointError(BilkaToGoError):
         self.name = name
 
 
+class CartChangeRejectedError(BilkaToGoError):
+    """Bilka applied a different quantity than asked to a Cart Line; the message is Bilka's."""
+
+    def __init__(self, message: str, article_number: str, requested: int, applied: int) -> None:
+        super().__init__(message)
+        self.article_number = article_number
+        self.requested = requested
+        self.applied = applied
+
+
 class UnexpectedResponseError(BilkaToGoError):
     """Bilka answered with something the client does not understand. Retry later."""

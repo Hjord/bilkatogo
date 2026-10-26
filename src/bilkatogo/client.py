@@ -28,6 +28,7 @@ from .const import (
 from .exceptions import (
     BilkaToGoError,
     BilkaUnreachableError,
+    CartChangeRejectedError,
     InvalidCredentialsError,
     UnexpectedResponseError,
     UnknownPickupPointError,
@@ -144,6 +145,44 @@ class BilkaToGoClient:
 
     async def get_cart(self) -> Cart:
         return Cart.from_dict(await self._shop("GET", "shop/v6/Cart", CART_PARAMS))
+
+    async def set_cart_quantity(self, article_number: str, quantity: int) -> Cart:
+        answer = await self._shop(
+            "GET",
+            "shop/v6/ChangeLineCount",
+            {"productId": article_number, "count": quantity, "fullCart": 0},
+        )
+        messages = [
+            message
+            for message in (answer.get("message"), answer.get("offerLimitMessage"))
+            if message
+        ]
+        applied = answer.get("productAmount")
+        if applied != quantity:
+            raise CartChangeRejectedError(
+                " ".join(messages) or f"Bilka set {article_number} to {applied}, not {quantity}",
+                article_number,
+                quantity,
+                applied,
+            )
+        cart = await self.get_cart()
+        cart.warnings = messages
+        return cart
+
+    async def add_to_cart(self, article_number: str, quantity: int = 1) -> Cart:
+        current = sum(
+            line.quantity
+            for line in (await self.get_cart()).lines
+            if line.article_number == article_number
+        )
+        return await self.set_cart_quantity(article_number, current + quantity)
+
+    async def remove_from_cart(self, article_number: str) -> Cart:
+        return await self.set_cart_quantity(article_number, 0)
+
+    async def clear_cart(self) -> Cart:
+        await self._shop("GET", "shop/v6/EmptyCart", CART_PARAMS)
+        return await self.get_cart()
 
     async def get_cart_pickup_point(self) -> PickupPoint | None:
         return (await self.get_cart()).pickup_point

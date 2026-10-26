@@ -40,6 +40,7 @@ class Cart(BilkaDataClass):
     packaging: Decimal
     discount: Decimal
     pickup_point: PickupPoint | None
+    warnings: list[str] = field(default_factory=list)
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod

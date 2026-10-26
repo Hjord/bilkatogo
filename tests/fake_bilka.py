@@ -27,6 +27,8 @@ ROUTES: dict[tuple[str, str], str] = {
         "https://api.bilkatogo.dk/api/shop/v6/AvailableDeliveryAddresses",
     ): "available_delivery_addresses",
     ("GET", "https://api.bilkatogo.dk/api/shop/v6/Cart"): "cart",
+    ("GET", "https://api.bilkatogo.dk/api/shop/v6/ChangeLineCount"): "change_line_count",
+    ("GET", "https://api.bilkatogo.dk/api/shop/v6/EmptyCart"): "empty_cart",
     ("POST", "https://f9vbjlr1bk-dsn.algolia.net/1/indexes/*/queries"): "algolia",
 }
 
@@ -76,6 +78,8 @@ class FakeBilka:
         self.delivery_addresses: dict[str, Any] = load_fixture("available_delivery_addresses.json")
         self.cart_contents: dict[str, Any] = load_fixture("cart.json")
         self.products: list[dict[str, Any]] = load_fixture("algolia_products.json")["hits"]
+        self.change_answer: dict[str, Any] = load_fixture("change_line_count.json")
+        self.max_quantity: int | None = None
         self._scripts: dict[str, deque[Scripted]] = defaultdict(deque)
         self.transport = httpx.MockTransport(self._handle)
 
@@ -165,6 +169,54 @@ class FakeBilka:
     def cart(self, request: httpx.Request) -> httpx.Response:
         if not self.has_shop_session(request):
             return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        return httpx.Response(200, json=self.cart_contents)
+
+    def change_line_count(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        article_number = request.url.params["productId"]
+        count = int(request.url.params["count"])
+        if self.max_quantity is not None:
+            count = min(count, self.max_quantity)
+        self._set_line(article_number, count)
+        answer = dict(self.change_answer)
+        answer.update(productId=article_number, productAmount=count)
+        return httpx.Response(200, json=answer)
+
+    def _set_line(self, article_number: str, count: int) -> None:
+        for group in self.cart_contents["lines"]:
+            for block in group["lines"]:
+                for line in block["orderlines"]:
+                    if str(line["product"]["objectID"]) == article_number:
+                        line.update(quantity=count, amount=count * line["unitprice"])
+                        if count == 0:
+                            block["orderlines"].remove(line)
+                        return
+        if count == 0:
+            return
+        [hit] = [hit for hit in self.products if hit["objectID"] == article_number]
+        line = {
+            "product": {
+                "objectID": int(article_number),
+                "name": hit["name"],
+                "price": hit["price"],
+            },
+            "quantity": count,
+            "unitprice": hit["price"],
+            "amount": count * hit["price"],
+        }
+        self.cart_contents["lines"].append(
+            {"headline": "Andet", "type": "products", "lines": [{"orderlines": [line]}]}
+        )
+
+    def empty_cart(self, request: httpx.Request) -> httpx.Response:
+        if not self.has_shop_session(request):
+            return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
+        self.cart_contents["lines"] = [
+            group
+            for group in self.cart_contents["lines"]
+            if group["headline"] in ("Emballage", "Services")
+        ]
         return httpx.Response(200, json=self.cart_contents)
 
     def algolia(self, request: httpx.Request) -> httpx.Response:

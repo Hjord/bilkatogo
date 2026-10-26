@@ -5,6 +5,7 @@ from .const import CURRENT_ORDER_SCAN_LIMIT
 from .exceptions import (
     BilkaToGoError,
     BilkaUnreachableError,
+    CartChangeRejectedError,
     InvalidCredentialsError,
     UnexpectedResponseError,
     UnknownPickupPointError,
@@ -40,6 +41,7 @@ __all__ = [
     "BilkaToGoError",
     "BilkaUnreachableError",
     "Cart",
+    "CartChangeRejectedError",
     "CartLine",
     "FileTokenStorage",
     "InvalidCredentialsError",
