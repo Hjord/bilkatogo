@@ -13,7 +13,7 @@ the same version.
 
 ## Installation
 
-Library only (its sole dependency is httpx):
+Library only (it depends on httpx, plus tzdata on Windows):
 
 ```sh
 pip install bilkatogo
@@ -103,6 +103,7 @@ asyncio.run(main())
 - `Order.status` is an `OrderStatus` (Processing, Received, Packed, Picked Up, Not Collected,
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
+- `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
 - Prices are in øre.
 
 ## Home Assistant

@@ -1,4 +1,5 @@
 from .base import BilkaDataClass as BilkaDataClass
+from .order import FINISHED_STATUSES as FINISHED_STATUSES
 from .order import Order as Order
 from .order import OrderStatus as OrderStatus
 from .order import PickupPoint as PickupPoint

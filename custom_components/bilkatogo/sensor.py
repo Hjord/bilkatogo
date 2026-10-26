@@ -17,12 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from bilkatogo import Order, OrderStatus
 
 from .const import DOMAIN
-from .coordinator import (
-    BILKA_TIME_ZONE,
-    BilkaToGoConfigEntry,
-    BilkaToGoCoordinator,
-    BilkaToGoData,
-)
+from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
 
 PARALLEL_UPDATES = 0
 
@@ -37,8 +32,7 @@ def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
     slot = order.pickup_slot if order else None
     if slot is None:
         return None
-    moment = slot.start if start else slot.end
-    return datetime.combine(slot.date, moment, BILKA_TIME_ZONE)
+    return slot.starts_at if start else slot.ends_at
 
 
 UNRECOGNIZED_STATUS = "unrecognized"
