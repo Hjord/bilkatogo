@@ -86,14 +86,14 @@ class PickupPoint(BilkaDataClass):
                 zip_code=str(data.get("zipCode") or ""),
                 city=data.get("city") or "",
             )
-        sid = data.get("sid")
+        store_id = data.get("sid")
         return cls(
             _raw=data,
             name=(data.get("name") or "").strip(),
             address=(data.get("street") or "").strip(),
             zip_code=str(data.get("zip") or ""),
             city=data.get("city") or "",
-            store_id=str(sid) if sid else None,
+            store_id=str(store_id) if store_id else None,
         )
 
 
