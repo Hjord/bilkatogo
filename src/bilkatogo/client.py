@@ -164,7 +164,7 @@ class BilkaToGoClient:
                 "hitsPerPage": limit,
                 "filters": f"isInAssortmentIn:{store_id} AND nonsearchable:false",
                 "attributesToRetrieve": json.dumps(
-                    ["article", "name", "brand", "price", f"storeData.{store_id}"]
+                    ["name", "brand", "price", f"storeData.{store_id}"]
                 ),
             }
         )

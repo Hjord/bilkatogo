@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from decimal import Decimal
 from typing import Any
@@ -30,8 +31,9 @@ async def test_search_finds_products_at_the_carts_store(bilka: FakeBilka) -> Non
     assert query["indexName"] == "prod_BILKATOGO_PRODUCTS"
     assert query["query"] == "skyr"
     assert query["filters"] == "isInAssortmentIn:1653 AND nonsearchable:false"
+    assert "article" not in json.loads(query["attributesToRetrieve"])
 
-    assert [product.article_number for product in products] == ["17924601", "10604691"]
+    assert [product.article_number for product in products] == ["19753", "128298"]
     plain = products[0]
     assert plain.name == "Skyr m. vanilje 0,2% fedt u. tilsat sukker"
     assert plain.brand == "Cheasy"
@@ -56,7 +58,7 @@ async def search(bilka: FakeBilka, text: str, **kwargs: Any) -> list[Product]:
 async def test_skarp_pris_offer_lowers_the_price(bilka: FakeBilka) -> None:
     [_, product] = await search(bilka, "skyr")
 
-    assert product.article_number == "10604691"
+    assert product.article_number == "128298"
     assert product.price == Decimal("39.31")
     assert product.unit_price == Decimal("49.14")
     assert product.offer == Offer(
@@ -139,7 +141,7 @@ async def test_limit_caps_the_number_of_products(bilka: FakeBilka) -> None:
     products = await search(bilka, "skyr", limit=1)
 
     assert algolia_query(bilka.calls("algolia")[0])["hitsPerPage"] == "1"
-    assert [product.article_number for product in products] == ["17924601"]
+    assert [product.article_number for product in products] == ["19753"]
 
 
 @pytest.mark.asyncio
