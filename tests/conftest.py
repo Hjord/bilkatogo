@@ -9,6 +9,14 @@ from tests.fake_bilka import FakeBilka
 collect_ignore = [] if find_spec("homeassistant") else ["ha"]
 
 
+def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter) -> None:
+    if collect_ignore:
+        terminalreporter.write_line(
+            "tests/ha not run: homeassistant is not installed. Run scripts/ha-test.sh.",
+            yellow=True,
+        )
+
+
 class MemoryTokenStorage(TokenStorage):
     def __init__(self) -> None:
         self.data: dict[str, Any] | None = None
