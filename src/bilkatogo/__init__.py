@@ -1,7 +1,12 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from .client import BilkaToGoClient
-from .exceptions import BilkaToGoError, InvalidCredentialsError
+from .exceptions import (
+    BilkaToGoError,
+    BilkaUnreachableError,
+    InvalidCredentialsError,
+    UnexpectedResponseError,
+)
 from .models import (
     Order,
     OrderDetails,
@@ -22,6 +27,7 @@ except PackageNotFoundError:
 __all__ = [
     "BilkaToGoClient",
     "BilkaToGoError",
+    "BilkaUnreachableError",
     "FileTokenStorage",
     "InvalidCredentialsError",
     "Order",
@@ -33,5 +39,6 @@ __all__ = [
     "PickupSlot",
     "Substitution",
     "TokenStorage",
+    "UnexpectedResponseError",
     "__version__",
 ]

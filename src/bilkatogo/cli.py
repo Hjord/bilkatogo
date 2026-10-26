@@ -11,7 +11,12 @@ import typer
 
 from . import config
 from .client import BilkaToGoClient
-from .exceptions import BilkaToGoError, InvalidCredentialsError
+from .exceptions import (
+    BilkaToGoError,
+    BilkaUnreachableError,
+    InvalidCredentialsError,
+    UnexpectedResponseError,
+)
 from .models import BilkaDataClass, Order, OrderStatus, PickupPoint, PickupSlot
 from .token_storage import FileTokenStorage
 
@@ -77,6 +82,16 @@ def fail(message: str) -> typer.Exit:
     return typer.Exit(code=1)
 
 
+def failure(action: str, err: BilkaToGoError) -> typer.Exit:
+    if isinstance(err, InvalidCredentialsError):
+        return fail("Login failed: Wrong email or password.")
+    if isinstance(err, BilkaUnreachableError):
+        return fail(f"{action}: Could not reach Bilka. Check your connection and try again.")
+    if isinstance(err, UnexpectedResponseError):
+        return fail(f"{action}: Bilka answered unexpectedly ({err}). Try again later.")
+    return fail(f"{action}: {err}")
+
+
 @app.callback()
 def main_callback() -> None:
     pass
@@ -99,10 +114,8 @@ async def login(
             email, password, token_storage=storage, httpx_client=http
         ) as client:
             await client.login()
-    except InvalidCredentialsError:
-        raise fail("Login failed: Wrong email or password.") from None
     except BilkaToGoError as err:
-        raise fail(f"Login failed: {err}") from None
+        raise failure("Login failed", err) from None
     finally:
         if http is not None:
             await http.aclose()
@@ -139,10 +152,8 @@ async def with_session[T](
                 email, prompt_password(), token_storage=storage, httpx_client=http
             ) as client:
                 return await fetch(client)
-    except InvalidCredentialsError:
-        raise fail("Login failed: Wrong email or password.") from None
     except BilkaToGoError as err:
-        raise fail(f"Could not fetch {what}: {err}") from None
+        raise failure(f"Could not fetch {what}", err) from None
     finally:
         if http is not None:
             await http.aclose()
