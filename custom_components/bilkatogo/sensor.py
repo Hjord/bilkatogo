@@ -44,12 +44,15 @@ def _status_option(status: OrderStatus) -> str:
     return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
 
 
+def _order_price(order: Order) -> Decimal:
+    return order.packed_price or order.ordered_price
+
+
 def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     order = data.order
     if order is None:
         return None
-    price = order.packed_price or order.ordered_price
-    return {"order_number": order.order_number, "price": float(price)}
+    return {"order_number": order.order_number, "price": float(_order_price(order))}
 
 
 def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
@@ -64,7 +67,7 @@ def _order_total(data: BilkaToGoData) -> Decimal | None:
     if data.details:
         return data.details.price
     if data.order:
-        return data.order.packed_price or data.order.ordered_price
+        return _order_price(data.order)
     return None
 
 
