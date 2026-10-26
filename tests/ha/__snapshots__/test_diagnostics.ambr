@@ -260,6 +260,7 @@
 # name: test_diagnostics_show_the_current_order_with_personal_data_redacted
   dict({
     'data': dict({
+      'details': None,
       'order': dict({
         '_raw': dict({
           'content': 'Æbler, Havregryn, Letmælk',
