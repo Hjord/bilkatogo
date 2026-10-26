@@ -1,6 +1,6 @@
 # BilkaToGo
 
-Tracking a customer's BilkaToGo grocery orders (Salling Group's online shop at bilkatogo.dk) from the moment they are placed until they are collected, including which products Bilka swapped for something else.
+Tracking a customer's BilkaToGo grocery orders (Salling Group's online shop at bilkatogo.dk) from the moment they are placed until they are collected, including which products Bilka swapped for something else or could not deliver, what the Order cost, and looking up products and their prices in the shop.
 
 ## Language
 
@@ -9,6 +9,10 @@ Tracking a customer's BilkaToGo grocery orders (Salling Group's online shop at b
 **Order**:
 One purchase placed in BilkaToGo, identified by its Order Number, collected or delivered in one Pickup Slot.
 _Avoid_: Purchase, basket, cart (a Cart is the not-yet-placed order)
+
+**Cart**:
+The customer's Order before it is placed, including the Pickup Point they have chosen. Product search uses that Pickup Point's Store unless told otherwise.
+_Avoid_: Basket, kurv
 
 **Current Order**:
 The unfinished Order with the earliest Pickup Slot or, when every Order is finished, the most recently finished one.
@@ -27,12 +31,42 @@ The date and time window in which the Order is collected, e.g. Tuesday 20/10, 12
 _Avoid_: Delivery interval, time slot, delivery date
 
 **Pickup Point**:
-The Bilka store where the Order is collected, e.g. Bilka Vejle.
-_Avoid_: Pickup zone, warehouse, location
+Where the customer collects the Order: a Bilka store such as Bilka Vejle, or a standalone point such as Pickup Fredericia. Each Pickup Point is served by one Store.
+_Avoid_: Pickup zone, delivery address, location
+
+**Store**:
+The Bilka that packs the Order and whose assortment, Prices, Offers and stock apply, e.g. Bilka Vejle.
+_Avoid_: Warehouse, shop, sid
 
 **Pickup Code**:
 The 8-digit code the customer enters at check-in when collecting the Order.
 _Avoid_: Check-in code, PIN
+
+**Order Total**:
+What the customer pays for the Order as it stands now, products after Discount plus Deposit, fees and delivery. It changes as Bilka packs the Order, Substitutes products and finds Missing Items.
+_Avoid_: Price, amount, invoice, packed price
+
+**Ordered Total**:
+What the Order cost when the customer placed it. The Order Total is compared with it to see what packing changed.
+_Avoid_: Checkout price, original price
+
+**Deposit**:
+The bottle and can deposit added to the Order Total, shown on the website as "Pant".
+
+**Service Fee**:
+What Bilka charges for packing the Order, shown on the website as "Pakkeservice".
+_Avoid_: Packing fee, picking fee
+
+**Packaging**:
+What Bilka charges for bags, shown on the website as "Emballage".
+_Avoid_: Bags
+
+**Delivery Fee**:
+What Bilka charges for Home Delivery.
+
+**Discount**:
+The total saved on the Order through Offers, membership and vouchers.
+_Avoid_: Promo, savings
 
 **Home Delivery**:
 An Order that is brought to the customer's address instead of collected at a Pickup Point.
@@ -74,5 +108,35 @@ The product Bilka packed instead of the Original Product, e.g. Kiwi instead of B
 _Avoid_: Erstatningsvare in code
 
 **Missing Item**:
-An Order Line that was out of stock and not replaced, so the customer receives nothing for it. Distinct from a Substitution.
-_Avoid_: Udsolgt vare, OOS line
+An Order Line Bilka packed fewer of than ordered without a Replacement Product, e.g. 2 of 4 skyr. It carries the missing quantity. Distinct from a Substitution. An Order where nothing at all could be packed has the Order Status Sold Out.
+_Avoid_: Udsolgt vare, OOS line, shortage
+
+### Products
+
+**Product**:
+One article in the BilkaToGo assortment, identified by its Article Number. An Order Line refers to a Product.
+_Avoid_: Item, vare (use only as the Danish alias)
+
+**Article Number**:
+Bilka's identifier for a Product, e.g. `932058`.
+_Avoid_: SKU, product ID, EAN (a barcode is something else)
+
+**Price**:
+What one unit of a Product normally costs at a Store.
+_Avoid_: List price, normal price
+
+**Offer**:
+A temporary lower Price for a Product at a Store, with Bilka's label (e.g. "Skarp pris"), an end date and optionally a limit per customer, shown on the website as "tilbud".
+_Avoid_: Promo, sale, campaign
+
+**Offer Price**:
+The Price of a Product while it has an Offer.
+_Avoid_: Sale price, discount (a Discount is the amount saved)
+
+**Multibuy Offer**:
+A deal on buying several units, e.g. "3 for 50 kr". Distinct from an Offer, which lowers the Price of one unit.
+_Avoid_: Bundle, mix-and-match
+
+**Unit Price**:
+The Price per unit of measure, e.g. 24,95 kr/kg, used to compare Products.
+_Avoid_: Kilo price, comparison price
