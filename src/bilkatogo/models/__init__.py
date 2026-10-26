@@ -1,4 +1,6 @@
 from .base import BilkaDataClass as BilkaDataClass
+from .cart import Cart as Cart
+from .cart import CartLine as CartLine
 from .order import FINISHED_STATUSES as FINISHED_STATUSES
 from .order import Order as Order
 from .order import OrderStatus as OrderStatus

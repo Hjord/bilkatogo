@@ -68,6 +68,11 @@ asyncio.run(main())
   `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
   placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
   Pass an `Order` to `get_order` instead of its number to skip that lookup.
+- `get_cart()` returns your `Cart`: its `lines` (each a `CartLine` with `product`,
+  `article_number`, `quantity`, `price` and `line_total`, with any Multibuy Offer already
+  applied in the line total), the Cart `total` broken down into `deposit`, `service_fee`,
+  `packaging` and `discount`, and the chosen `pickup_point`. Bilka's bag and Pakkeservice lines
+  are not Cart Lines; they show up as `packaging` and `service_fee`.
 
 ## Command line
 

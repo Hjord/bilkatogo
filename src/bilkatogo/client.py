@@ -32,7 +32,7 @@ from .exceptions import (
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
-from .models import Order, OrderDetails, PickupPoint, Product, current_order
+from .models import Cart, Order, OrderDetails, PickupPoint, Product, current_order
 from .token_storage import TokenStorage
 
 
@@ -142,10 +142,11 @@ class BilkaToGoClient:
                 return point
         raise UnknownPickupPointError(name)
 
+    async def get_cart(self) -> Cart:
+        return Cart.from_dict(await self._shop("GET", "shop/v6/Cart", CART_PARAMS))
+
     async def get_cart_pickup_point(self) -> PickupPoint | None:
-        data = await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
-        address = data.get("deliveryAddress")
-        return PickupPoint.from_delivery_address(address) if address else None
+        return (await self.get_cart()).pickup_point
 
     async def search(
         self, text: str, *, pickup_point: str | None = None, limit: int = SEARCH_LIMIT

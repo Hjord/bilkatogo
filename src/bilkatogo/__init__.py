@@ -11,6 +11,8 @@ from .exceptions import (
 )
 from .models import (
     FINISHED_STATUSES,
+    Cart,
+    CartLine,
     MissingItem,
     Offer,
     Order,
@@ -37,6 +39,8 @@ __all__ = [
     "BilkaToGoClient",
     "BilkaToGoError",
     "BilkaUnreachableError",
+    "Cart",
+    "CartLine",
     "FileTokenStorage",
     "InvalidCredentialsError",
     "MissingItem",

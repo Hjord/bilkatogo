@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 from .base import BilkaDataClass
-from .money import kroner
+from .money import discount, kroner
 from .order import OrderStatus, PickupPoint, PickupSlot
 
 
@@ -25,7 +25,6 @@ class PickupCode(BilkaDataClass):
 _LOGGER = logging.getLogger(__name__)
 
 SUBSTITUTED_TAGLINE = "erstattet"
-DISCOUNT_KEYS = ("promo", "membership_offer_discount", "personalized_offer_discount")
 
 
 @dataclass
@@ -160,10 +159,7 @@ class OrderDetails(BilkaDataClass):
             service_fee=kroner(stat.get("packing")),
             packaging=kroner(stat.get("packaging_price")),
             delivery_fee=kroner(stat.get("delivery_price")),
-            discount=kroner(
-                sum(int(stat.get(key) or 0) for key in DISCOUNT_KEYS)
-                + sum(int(voucher.get("amount") or 0) for voucher in stat.get("vouchers") or [])
-            ),
+            discount=discount(stat),
             lines=lines,
             substitutions=[
                 substitution

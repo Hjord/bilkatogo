@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 from bilkatogo import TokenStorage
-from tests.fake_bilka import FakeBilka
+from tests.fake_bilka import FakeBilka, load_fixture
 
 collect_ignore = [] if find_spec("homeassistant") else ["ha"]
 
@@ -31,6 +31,12 @@ class MemoryTokenStorage(TokenStorage):
 @pytest.fixture
 def bilka() -> FakeBilka:
     return FakeBilka()
+
+
+@pytest.fixture
+def logged_in_cart(bilka: FakeBilka) -> FakeBilka:
+    bilka.cart_contents = load_fixture("cart_logged_in.json")
+    return bilka
 
 
 @pytest.fixture

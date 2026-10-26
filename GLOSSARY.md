@@ -126,7 +126,7 @@ Bilka's identifier for a Product, e.g. `19753`: what Order Lines and Cart Lines 
 _Avoid_: SKU, product ID, objectID, EAN (a barcode is something else)
 
 **Price**:
-What one unit of a Product normally costs at a Store.
+What one unit of a Product normally costs at a Store. On a Cart Line it is Bilka's `product.price`; the line's `unitprice` already has the Offer or Multibuy Offer applied.
 _Avoid_: List price, normal price
 
 **Offer**:
