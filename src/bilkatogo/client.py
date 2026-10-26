@@ -201,7 +201,8 @@ class BilkaToGoClient:
         return await self.get_cart()
 
     async def get_cart_pickup_point(self) -> PickupPoint | None:
-        return (await self.get_cart()).pickup_point
+        address = (await self.get_cart_json()).get("deliveryAddress")
+        return PickupPoint.from_delivery_address(address) if address else None
 
     async def search(
         self, text: str, *, pickup_point: str | None = None, limit: int = SEARCH_LIMIT

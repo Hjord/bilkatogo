@@ -49,6 +49,23 @@ async def test_cart_pickup_point_is_the_customers_chosen_one(bilka: FakeBilka) -
 
 
 @pytest.mark.asyncio
+async def test_cart_pickup_point_survives_a_cart_line_that_does_not_parse(
+    bilka: FakeBilka,
+) -> None:
+    bilka.cart_contents["lines"].append(
+        {"headline": "Andet", "lines": [{"orderlines": [{"quantity": "not a number"}]}]}
+    )
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
+    ):
+        point = await client.get_cart_pickup_point()
+
+    assert point is not None
+    assert point.name == "Bilka Waves, Hundige"
+
+
+@pytest.mark.asyncio
 async def test_cart_without_a_pickup_point_has_none(bilka: FakeBilka) -> None:
     bilka.cart_contents = {**bilka.cart_contents, "deliveryAddress": None}
     async with (
