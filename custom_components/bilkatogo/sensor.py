@@ -17,10 +17,9 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from bilkatogo import Order, OrderStatus
 
+from .announcer import missing_item_data, substitution_data
 from .const import CURRENCY, DOMAIN
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
-from .missing_items import missing_item_data
-from .substitutions import substitution_data
 
 PARALLEL_UPDATES = 0
 
