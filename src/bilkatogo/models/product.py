@@ -45,9 +45,9 @@ class Product(BilkaDataClass):
                 price=kroner(store.get("price")),
                 unit_price=kroner(store.get("unitsOfMeasureOfferPrice")) if unit else None,
                 ends=_date(store.get("offerUntil")),
-                limit_per_customer=store.get("offerMax") or None,
+                limit_per_customer=_whole_number(store.get("offerMax")),
             )
-        price = store.get("beforePrice") or hit.get("price") if offer else store.get("price")
+        price = (store.get("beforePrice") or hit.get("price")) if offer else store.get("price")
         return cls(
             _raw=hit,
             article_number=str(hit["article"]),
@@ -61,6 +61,13 @@ class Product(BilkaDataClass):
             offer=offer,
             multibuy_offer=label if multibuy and label else None,
         )
+
+
+def _whole_number(value: Any) -> int | None:
+    try:
+        return int(value) or None
+    except TypeError, ValueError:
+        return None
 
 
 def _date(value: str | None) -> date | None:

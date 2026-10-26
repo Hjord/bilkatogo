@@ -260,7 +260,7 @@ async def order(
         ("Pickup Point", format_point(details.pickup_point, details.home_delivery)),
         ("Pickup Code", details.pickup_code.code if details.pickup_code else ""),
         ("Ordered Total", format_amount(details.ordered_total)),
-        ("Order Total", format_amount(details.price)),
+        ("Order Total", format_amount(details.order_total)),
         ("Deposit", format_amount(details.deposit)),
         ("Service Fee", format_amount(details.service_fee)),
         ("Packaging", format_amount(details.packaging)),

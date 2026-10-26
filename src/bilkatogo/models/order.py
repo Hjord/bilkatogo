@@ -77,23 +77,25 @@ class PickupPoint(BilkaDataClass):
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> PickupPoint:
-        if "location" in data:
-            return cls(
-                _raw=data,
-                name=data.get("location") or "",
-                address=data.get("address") or "",
-                zip_code=str(data.get("zipCode") or ""),
-                city=data.get("city") or "",
-            )
-        sid = data.get("sid")
+    def from_order(cls, data: dict[str, Any]) -> PickupPoint:
+        return cls(
+            _raw=data,
+            name=data.get("location") or "",
+            address=data.get("address") or "",
+            zip_code=str(data.get("zipCode") or ""),
+            city=data.get("city") or "",
+        )
+
+    @classmethod
+    def from_delivery_address(cls, data: dict[str, Any]) -> PickupPoint:
+        store_id = data.get("sid")
         return cls(
             _raw=data,
             name=(data.get("name") or "").strip(),
             address=(data.get("street") or "").strip(),
             zip_code=str(data.get("zip") or ""),
             city=data.get("city") or "",
-            store_id=str(sid) if sid else None,
+            store_id=str(store_id) if store_id else None,
         )
 
 
@@ -123,7 +125,7 @@ class Order(BilkaDataClass):
             status_code=status_code,
             ordered_at=_ordered_at(data.get("ordered")),
             pickup_slot=PickupSlot.from_dict(data),
-            pickup_point=PickupPoint.from_dict(pickupzone) if pickupzone else None,
+            pickup_point=PickupPoint.from_order(pickupzone) if pickupzone else None,
             home_delivery=bool((pickupzone or {}).get("home_delivery", False)),
             delivered=bool(data.get("delivered", False)),
             ordered_price=kroner(data.get("orderedPrice")),

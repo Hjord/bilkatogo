@@ -108,7 +108,7 @@ asyncio.run(main())
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
 - `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
 - Amounts are `Decimal` kroner.
-- `OrderDetails.price` is the Order Total, broken down into `deposit`, `service_fee`,
+- `OrderDetails.order_total` is the Order Total, broken down into `deposit`, `service_fee`,
   `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
   placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
   Pass an `Order` to `get_order` instead of its number to skip that lookup.
@@ -135,9 +135,9 @@ All entities describe the Current Order.
 | Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
 | Missing Items | Number of products packed short without a replacement | List of Product, Article Number, ordered and missing quantity |
 | Order Total | What you pay for the order now (DKK) | Order Number, Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
-| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, price (DKK), Pickup Slot end |
-| Pickup Code | The code you enter at check-in | Order Number, price (DKK) |
-| Pickup Point | The Bilka store you pick up from | Order Number, price (DKK) |
+| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, Order Total (DKK), Pickup Slot end |
+| Pickup Code | The code you enter at check-in | Order Number, Order Total (DKK) |
+| Pickup Point | The Bilka store you pick up from | Order Number, Order Total (DKK) |
 
 Substitutions, Missing Items, the Pickup Code and the Order Total breakdown (Deposit, Service
 Fee, Packaging, Delivery Fee, Discount) are fetched once the order is packed. Before that the

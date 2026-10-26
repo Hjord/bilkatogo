@@ -17,10 +17,9 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from bilkatogo import Order, OrderStatus
 
+from .announcer import missing_item_data, substitution_data
 from .const import CURRENCY, DOMAIN
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
-from .missing_items import missing_item_data
-from .substitutions import substitution_data
 
 PARALLEL_UPDATES = 0
 
@@ -45,12 +44,15 @@ def _status_option(status: OrderStatus) -> str:
     return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
 
 
+def _order_price(order: Order) -> Decimal:
+    return order.packed_price or order.ordered_price
+
+
 def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     order = data.order
     if order is None:
         return None
-    price = order.packed_price or order.ordered_price
-    return {"order_number": order.order_number, "price": float(price)}
+    return {"order_number": order.order_number, "order_total": float(_order_price(order))}
 
 
 def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
@@ -63,9 +65,9 @@ def _slot_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
 
 def _order_total(data: BilkaToGoData) -> Decimal | None:
     if data.details:
-        return data.details.price
+        return data.details.order_total
     if data.order:
-        return data.order.packed_price or data.order.ordered_price
+        return _order_price(data.order)
     return None
 
 

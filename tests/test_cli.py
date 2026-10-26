@@ -306,7 +306,7 @@ def test_order_shows_the_order_total_breakdown(invoke) -> None:
 
 
 ORDER_TOTAL_KEYS = (
-    "price",
+    "order_total",
     "ordered_total",
     "deposit",
     "service_fee",
@@ -322,7 +322,7 @@ def test_order_json_includes_the_order_total_breakdown(invoke) -> None:
     assert result.exit_code == 0, result.output
     details = json.loads(result.output)
     assert {key: details[key] for key in ORDER_TOTAL_KEYS} == {
-        "price": "793.80",
+        "order_total": "793.80",
         "ordered_total": None,
         "deposit": "1.50",
         "service_fee": "39.00",

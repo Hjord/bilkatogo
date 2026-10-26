@@ -130,7 +130,9 @@ class BilkaToGoClient:
 
     async def get_pickup_points(self) -> list[PickupPoint]:
         data = await self._shop("GET", "shop/v6/AvailableDeliveryAddresses", {"orderByZipcode": 1})
-        return [PickupPoint.from_dict(address) for address in data.get("addresses") or []]
+        return [
+            PickupPoint.from_delivery_address(address) for address in data.get("addresses") or []
+        ]
 
     async def get_pickup_point(self, name: str) -> PickupPoint:
         wanted = name.strip().casefold()
@@ -142,7 +144,7 @@ class BilkaToGoClient:
     async def get_cart_pickup_point(self) -> PickupPoint | None:
         data = await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
         address = data.get("deliveryAddress")
-        return PickupPoint.from_dict(address) if address else None
+        return PickupPoint.from_delivery_address(address) if address else None
 
     async def search(
         self, text: str, *, pickup_point: str | None = None, limit: int = SEARCH_LIMIT

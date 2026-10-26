@@ -103,8 +103,8 @@
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           },
           "pickup_slot_end": {
             "name": "Pickup slot end"
@@ -117,8 +117,8 @@
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           }
         }
       },
@@ -128,8 +128,8 @@
           "order_number": {
             "name": "Order number"
           },
-          "price": {
-            "name": "Price"
+          "order_total": {
+            "name": "Order total"
           }
         }
       }

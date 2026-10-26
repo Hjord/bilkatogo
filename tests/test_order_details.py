@@ -37,7 +37,7 @@ async def test_get_order_fetches_one_order_with_pickup_code(bilka: FakeBilka) ->
     assert details.home_delivery is False
     assert details.pickup_code is not None
     assert details.pickup_code.code == "12345678"
-    assert str(details.price) == "509.00"
+    assert str(details.order_total) == "509.00"
 
 
 @pytest.mark.asyncio
