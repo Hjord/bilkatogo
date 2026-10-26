@@ -11,61 +11,17 @@ placed until you pick it up, including which products Bilka substituted.
 The library, the CLI and the Home Assistant integration are released together and always share
 the same version.
 
-## Installation
+- [Library](#library): an async Python client for your orders, Pickup Points and product search.
+- [Command line](#command-line): the same from your terminal or a script.
+- [Home Assistant](#home-assistant): sensors and events for your Current Order.
 
-Library only (it depends on httpx, plus tzdata on Windows):
+## Library
 
 ```sh
 pip install bilkatogo
 ```
 
-With the command line tool:
-
-```sh
-pip install 'bilkatogo[cli]'
-```
-
-Or run the CLI without installing it:
-
-```sh
-uvx --from 'bilkatogo[cli]' bilkatogo --help
-```
-
-Home Assistant: add the integration from the Home Assistant Marketplace (HACS) by searching
-for **BilkaToGo**, or add `https://github.com/nickknissen/bilkatogo` as a custom repository of
-type Integration. Restart Home Assistant afterwards.
-
-## Command line
-
-```sh
-bilkatogo login                 # log in and store the session
-bilkatogo orders --limit 10     # list your most recent orders
-bilkatogo order                 # show the Current Order with its details
-bilkatogo order 900000000001    # show one order by Order Number
-bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
-bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
-bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
-```
-
-Every command accepts `--json` for machine-readable output.
-
-Credentials are looked up in this order:
-
-1. `--email` and `--password`
-2. the `BILKATOGO_EMAIL` and `BILKATOGO_PASSWORD` environment variables
-3. `config.json` (with `email` and `password` keys) in the user config directory
-   (`~/.config/bilkatogo` on Linux, `%APPDATA%\bilkatogo` on Windows,
-   `~/Library/Application Support/bilkatogo` on macOS); set `BILKATOGO_CONFIG_DIR` to use
-   another directory
-4. an interactive prompt
-
-The session is stored as `session.json` in the same directory, so later commands don't log in
-again.
-
-The Current Order is the unfinished order with the earliest pickup slot or, when every order
-is finished, the most recently finished one.
-
-## Library
+It depends on httpx, plus tzdata on Windows.
 
 ```python
 import asyncio
@@ -113,9 +69,51 @@ asyncio.run(main())
   placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
   Pass an `Order` to `get_order` instead of its number to skip that lookup.
 
+## Command line
+
+```sh
+pip install 'bilkatogo[cli]'
+```
+
+Or run it without installing:
+
+```sh
+uvx --from 'bilkatogo[cli]' bilkatogo --help
+```
+
+```sh
+bilkatogo login                 # log in and store the session
+bilkatogo orders --limit 10     # list your most recent orders
+bilkatogo order                 # show the Current Order with its details
+bilkatogo order 900000000001    # show one order by Order Number
+bilkatogo pickup-points         # list Pickup Points and their Store, * marks your Cart's
+bilkatogo search skyr           # Products with Price, stock and Offer at your Cart's Store
+bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
+```
+
+Every command accepts `--json` for machine-readable output.
+
+Credentials are looked up in this order:
+
+1. `--email` and `--password`
+2. the `BILKATOGO_EMAIL` and `BILKATOGO_PASSWORD` environment variables
+3. `config.json` (with `email` and `password` keys) in the user config directory
+   (`~/.config/bilkatogo` on Linux, `%APPDATA%\bilkatogo` on Windows,
+   `~/Library/Application Support/bilkatogo` on macOS); set `BILKATOGO_CONFIG_DIR` to use
+   another directory
+4. an interactive prompt
+
+The session is stored as `session.json` in the same directory, so later commands don't log in
+again.
+
+The Current Order is the unfinished order with the earliest pickup slot or, when every order
+is finished, the most recently finished one.
+
 ## Home Assistant
 
-1. Install the integration (see [Installation](#installation)) and restart Home Assistant.
+1. Add the integration from the Home Assistant Marketplace (HACS) by searching for
+   **BilkaToGo**, or add `https://github.com/nickknissen/bilkatogo` as a custom repository of
+   type Integration. Restart Home Assistant afterwards.
 2. Go to **Settings > Devices & services > Add integration** and pick **BilkaToGo**.
 3. Sign in with the email and password you use on bilkatogo.dk. Add the integration once per
    account.
@@ -221,7 +219,11 @@ UV_PROJECT_ENVIRONMENT=.venv-ha uv run --no-default-groups --group ha pytest tes
 UV_PROJECT_ENVIRONMENT=.venv-ha uv run --no-default-groups --group ha ty check custom_components tests/ha
 ```
 
-Home Assistant does not run on Windows; use Linux, WSL or CI for these.
+Home Assistant does not run on Windows. There, `scripts/ha-test.sh` runs both commands in WSL:
+
+```sh
+wsl.exe -e bash scripts/ha-test.sh
+```
 
 The Home Assistant tests run the real library against the fake Bilka backend in
 `tests/fake_bilka.py`. The integration creates its httpx client with Home Assistant's
