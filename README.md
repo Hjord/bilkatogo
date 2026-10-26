@@ -131,6 +131,9 @@ All entities describe the Current Order.
 
 Substitutions and the Pickup Code are fetched once the order is packed.
 
+An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
+not know yet; the code is in the attribute. Without any order the entities have no state.
+
 ### Event `bilkatogo_substitution`
 
 Fired once for every new substitution, with this data:

@@ -44,7 +44,7 @@
           "not_collected": "Uafhentet",
           "cancelled": "Annulleret",
           "sold_out": "Fuldt udsolgt",
-          "unknown": "Ukendt"
+          "unrecognized": "Ukendt"
         },
         "state_attributes": {
           "status_code": {

@@ -41,6 +41,13 @@ def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
     return datetime.combine(slot.date, moment, BILKA_TIME_ZONE)
 
 
+UNRECOGNIZED_STATUS = "unrecognized"
+
+
+def _status_option(status: OrderStatus) -> str:
+    return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
+
+
 def _order_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     order = data.order
     if order is None:
@@ -62,8 +69,8 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         key="order_status",
         translation_key="order_status",
         device_class=SensorDeviceClass.ENUM,
-        options=[status.value for status in OrderStatus],
-        value_fn=lambda data: data.order.status.value if data.order else None,
+        options=[_status_option(status) for status in OrderStatus],
+        value_fn=lambda data: _status_option(data.order.status) if data.order else None,
         attributes_fn=lambda data: {"status_code": data.order.status_code} if data.order else None,
     ),
     BilkaToGoSensorDescription(
