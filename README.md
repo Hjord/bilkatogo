@@ -82,6 +82,9 @@ asyncio.run(main())
   (e.g. asking you to call customer service before ordering 99). When Bilka applies a different
   quantity than asked, they raise `CartChangeRejectedError` with Bilka's message. The client
   never places an Order.
+- Logging in on the website or in the app can undo Cart changes made through the library: Bilka
+  replaces the Cart with the one that browser or app saw at its previous login, kept for up to
+  7 days. Check the Cart after logging in there if you changed it from here.
 - `get_cart_json()`, `get_order_json(order)` and `get_current_order_json()` return Bilka's
   answer untouched; `bilkatogo.redact.redact()` replaces the personal data in it.
 
@@ -113,7 +116,8 @@ bilkatogo cart remove 18381     # take it out of the Cart
 
 `cart add`, `set` and `remove` change the Cart without asking and print the updated Cart and any
 warning from Bilka. When Bilka applies a different quantity than asked they print Bilka's
-message and exit 1. There is no command to empty the Cart.
+message and exit 1. There is no command to empty the Cart. Logging in on the website or in the
+app afterwards can undo these changes (see the Library section).
 
 Every command accepts `--json` for machine-readable output.
 
