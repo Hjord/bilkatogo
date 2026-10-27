@@ -134,16 +134,33 @@ async def test_stored_session_about_to_expire_is_renewed_before_the_shop_call(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("route", "failure"),
+    ("route", "failure", "message"),
     [
-        ("order_history", httpx.ConnectError("fake: connection refused")),
-        ("order_history", httpx.ReadTimeout("fake: read timed out")),
-        ("gigya_login", httpx.ConnectTimeout("fake: connect timed out")),
-        ("login_jwt", httpx.ConnectError("fake: connection reset")),
+        (
+            "order_history",
+            httpx.ConnectError("[Errno -3] Temporary failure in name resolution"),
+            "Could not reach api.bilkatogo.dk: "
+            "ConnectError: [Errno -3] Temporary failure in name resolution",
+        ),
+        (
+            "order_history",
+            httpx.ReadTimeout(""),
+            "Could not reach api.bilkatogo.dk: ReadTimeout",
+        ),
+        (
+            "gigya_login",
+            httpx.ConnectTimeout("fake: connect timed out"),
+            "Could not reach accounts.eu1.gigya.com: ConnectTimeout: fake: connect timed out",
+        ),
+        (
+            "login_jwt",
+            httpx.ConnectError("fake: connection reset"),
+            "Could not reach api.bilkatogo.dk: ConnectError: fake: connection reset",
+        ),
     ],
 )
-async def test_connection_failures_raise_bilka_unreachable(
-    bilka: FakeBilka, route: str, failure: Exception
+async def test_connection_failures_raise_bilka_unreachable_naming_the_cause(
+    bilka: FakeBilka, route: str, failure: Exception, message: str
 ) -> None:
     bilka.script(route, failure)
 
@@ -151,8 +168,10 @@ async def test_connection_failures_raise_bilka_unreachable(
         bilka.client() as http,
         BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as client,
     ):
-        with pytest.raises(BilkaUnreachableError):
+        with pytest.raises(BilkaUnreachableError) as raised:
             await client.get_orders()
+
+    assert str(raised.value) == message
 
 
 HTML_ERROR = "<html><body>Bad Gateway</body></html>"

@@ -349,7 +349,8 @@ class BilkaToGoClient:
         try:
             return await self._http.request(method, url, **kwargs)
         except httpx.TransportError as err:
-            raise BilkaUnreachableError(f"Could not reach {httpx.URL(url).host}: {err}") from err
+            cause = f"{type(err).__name__}: {err}" if str(err) else type(err).__name__
+            raise BilkaUnreachableError(f"Could not reach {httpx.URL(url).host}: {cause}") from err
 
     @staticmethod
     def _json(response: httpx.Response, what: str) -> dict[str, Any]:
