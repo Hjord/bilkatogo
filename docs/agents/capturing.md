@@ -4,7 +4,7 @@ A capture is a real Bilka response saved as a fixture in `tests/fixtures/`, repl
 
 ## Picking the route
 
-1. **Read-only calls (`Cart`, `OrderHistory`, `OrderDetails`)**: use the library's own session. `bilkatogo order --raw --redact` and `bilkatogo cart --raw --redact` once #25 lands; before that, a short script outside the repo calling `client._shop("GET", path, params)` with the session in `%APPDATA%\bilkatogo\session.json`. The Cart belongs to the account, so the library reads the same Cart the website shows.
+1. **Read-only calls (`Cart`, `OrderHistory`, `OrderDetails`)**: use the library's own session with `bilkatogo order <number> --raw --redact` and `bilkatogo cart --raw --redact`. Check the output for anything personal the redaction missed before committing it (a home delivery address is detected by guess). The Cart belongs to the account, so the library reads the same Cart the website shows.
 2. **Anything the customer does on the website (Cart changes, warnings, rejections)**: the maintainer acts in the Chrome DevTools MCP browser while logged in; the agent reads the network log afterwards. The agent never types the password and only sends writes the maintainer has confirmed.
 
 ## Reading the browser's network log
