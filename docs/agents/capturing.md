@@ -7,10 +7,29 @@ A capture is a real Bilka response saved as a fixture in `tests/fixtures/`, repl
 1. **Read-only calls (`Cart`, `OrderHistory`, `OrderDetails`)**: use the library's own session with `bilkatogo order <number> --raw --redact` and `bilkatogo cart --raw --redact`. Check the output for anything personal the redaction missed before committing it (a home delivery address is detected by guess). The Cart belongs to the account, so the library reads the same Cart the website shows.
 2. **Anything the customer does on the website (Cart changes, warnings, rejections)**: the maintainer acts in the Chrome DevTools MCP browser while logged in; the agent reads the network log afterwards. The agent never types the password and only sends writes the maintainer has confirmed.
 
+## Live checks
+
+When the library and the website disagree, or before any write against the maintainer's account:
+
+1. **Diff the requests first.** Put the browser's request next to the library's: URL and params, headers, every cookie sent, the body, and the `Set-Cookie` in the answer. Test a theory only after that diff. The website's JS bundles (loaded by bilkatogo.dk) are the next place to look for how the website calls an endpoint.
+2. **One client writing.** Close every other BilkaToGo client (browser windows, the Android app) before a write, and use a fresh isolated browser context logged into the right account. A second client can undo a change minutes later.
+3. **Read uncached.** Add `without_cache=1` to `shop/v6/Cart` when checking whether a change stuck; the website does the same after logging in.
+
+### How Bilka's Cart and login behave
+
+Found in the live check for #26 (2026-10-27):
+
+- `auth/LoginJWT` replaces the account's Cart with the Cart stored under the `cart` cookie the login presents. It is the guest-Cart transfer (fill a Cart, log in, it moves to the account), applied also to `cart` cookies handed out while logged in. It replaces, it does not merge.
+- Bilka sets `cart={"cartID": …}` itself: HttpOnly, 7 days, a new `cartID` on every `LoginJWT` (`cart=deleted` for the presented one first). Reads and `ChangeLineCount` leave it alone.
+- So a browser or app that logs in again brings back the Cart as it was at its previous login. A login without a `cart` cookie, or with a fresh guest Cart that is empty, leaves the Cart alone. The library logs in without one.
+- Choosing a Pickup Point sends `shop/v6/SetDeliveryAddress?id=…&zipcode=…` and adds a `pz={"id":…}` cookie to later requests.
+- Unknown: whether a `cartID` answered with `cart=deleted` still restores, and how long Bilka keeps a stored Cart.
+
 ## Reading the browser's network log
 
-- List with `list_network_requests` filtered to `resourceTypes: ["xhr", "fetch"]` and a `pageSize` of 20 or less, paging from the end; the unfiltered log runs to 90k characters of analytics.
-- Fetch bodies with `get_network_request` and a `responseFilePath` outside the repo, then inspect the saved file with a script. The tool prints the request headers inline, including `jwt_token` and cookies, so fetch only the requests you need and ask the maintainer to log out of the browser when done.
+- List with `list_network_requests` filtered to `resourceTypes: ["xhr", "fetch"]` and a `pageSize` of 20 or less, paging from the end; the unfiltered log runs to 90k characters of analytics, and even the filtered one carries long analytics and map-tile URLs.
+- Fetch every request with `get_network_request` and both `requestFilePath` and `responseFilePath` outside the repo, then inspect the saved files with a script. The tool prints the request headers inline, including `jwt_token` and cookies, so fetch only the requests you need and ask the maintainer to log out of the browser when done.
+- Read the page with `take_snapshot` and a `filePath`, then grep the file. `wait_for` and `click` with `includeSnapshot` print the whole page inline.
 
 ## Redaction
 
