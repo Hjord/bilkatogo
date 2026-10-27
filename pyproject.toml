@@ -1,6 +1,6 @@
 [project]
 name = "bilkatogo"
-version = "0.3.1"
+version = "0.3.2"
 description = "Async client and CLI for tracking BilkaToGo orders."
 readme = "README.md"
 authors = [
