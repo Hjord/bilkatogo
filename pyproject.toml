@@ -57,7 +57,7 @@ asyncio_default_fixture_loop_scope = "function"
 python-version = "3.14"
 
 [tool.ty.src]
-include = ["src/", "tests/", "release.py"]
+include = ["src/", "tests/", "release.py", "scripts/"]
 exclude = ["tests/ha/"]
 
 [tool.ty.rules]

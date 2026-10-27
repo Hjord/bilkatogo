@@ -16,7 +16,7 @@ Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents
 
 ## Testing
 
-Before calling any change done, run `scripts/check.sh`: CI's lint and test jobs (ruff format, ruff, ty, `release.py check`, pytest).
+Before calling any change done, run `uv run python scripts/check.py`: CI's lint and test jobs (ruff format, ruff, ty, `release.py check`, pytest).
 
 `uv run pytest` skips `tests/ha` when Home Assistant can't be installed, which is always the case on Windows. Before calling a change to `custom_components/` or a model's serialised fields done, run `scripts/ha-test.sh` (from Windows: `wsl.exe -e bash scripts/ha-test.sh`); it runs CI's `ha-test` job, including the diagnostics snapshot.
 
