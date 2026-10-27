@@ -38,6 +38,28 @@ async def test_unauthorized_shop_call_logs_in_again_and_retries_once(
 
 
 @pytest.mark.asyncio
+async def test_logging_in_again_keeps_cart_changes_made_elsewhere(
+    logged_in_cart: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(logged_in_cart, storage)
+    async with (
+        logged_in_cart.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, httpx_client=http) as website,
+    ):
+        await website.set_cart_quantity("18364", 3)
+    logged_in_cart.script("cart", UNAUTHORIZED)
+
+    async with (
+        logged_in_cart.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        cart = await client.get_cart()
+
+    assert len(logged_in_cart.calls("login_jwt")) == 3
+    assert {line.article_number: line.quantity for line in cart.lines}["18364"] == 3
+
+
+@pytest.mark.asyncio
 async def test_unauthorized_order_details_logs_in_again_and_retries_once(
     bilka: FakeBilka, storage: MemoryTokenStorage
 ) -> None:

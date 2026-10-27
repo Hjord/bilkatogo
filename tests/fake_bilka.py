@@ -1,3 +1,4 @@
+import copy
 import json
 from collections import defaultdict, deque
 from collections.abc import Callable
@@ -46,6 +47,11 @@ def form(request: httpx.Request) -> dict[str, str]:
     return {key: values[0] for key, values in parse_qs(request.content.decode()).items()}
 
 
+def sent_cookies(request: httpx.Request) -> dict[str, str]:
+    pairs = (part.split("=", 1) for part in request.headers.get("cookie", "").split("; "))
+    return {pair[0]: pair[1] for pair in pairs if len(pair) == 2}
+
+
 def algolia_query(request: httpx.Request) -> dict[str, str]:
     [query] = json.loads(request.content)["requests"]
     return {"indexName": query["indexName"], **dict(parse_qsl(query["params"]))}
@@ -58,6 +64,9 @@ class FakeBilka:
     Each request is matched against ROUTES to a route name. If a script was queued for that
     route with `script()`, the next scripted response is used; otherwise the default handler
     method of the same name answers, which behaves like the real backend for one account.
+
+    Like Bilka, LoginJWT hands out a `cart` cookie and, when a login presents one it handed
+    out before, replaces the Cart with the Cart as it was at that earlier login.
     """
 
     def __init__(self, email: str = EMAIL, password: str = PASSWORD) -> None:
@@ -79,6 +88,7 @@ class FakeBilka:
         }
         self.delivery_addresses: dict[str, Any] = load_fixture("available_delivery_addresses.json")
         self.cart_contents: dict[str, Any] = load_fixture("cart.json")
+        self.stored_carts: dict[str, dict[str, Any]] = {}
         self.products: list[dict[str, Any]] = load_fixture("algolia_products.json")["hits"]
         self.change_answer: dict[str, Any] = load_fixture("change_line_count.json")
         self.max_quantity: int | None = None
@@ -144,7 +154,12 @@ class FakeBilka:
     def login_jwt(self, request: httpx.Request) -> httpx.Response:
         if request.headers.get("jwt_token") != load_fixture("gigya_jwt.json")["id_token"]:
             return httpx.Response(401, json={"code": 401, "msg": "Unauthorized"})
-        headers = [("set-cookie", f"{k}={v}; path=/") for k, v in SESSION_COOKIES.items()]
+        if (cart_id := sent_cookies(request).get("cart")) in self.stored_carts:
+            self.cart_contents = copy.deepcopy(self.stored_carts[cart_id])
+        cart_id = f"fake-cart-{len(self.stored_carts) + 1}"
+        self.stored_carts[cart_id] = copy.deepcopy(self.cart_contents)
+        cookies = {**SESSION_COOKIES, "cart": cart_id}
+        headers = [("set-cookie", f"{k}={v}; path=/") for k, v in cookies.items()]
         return httpx.Response(200, json=load_fixture("login_jwt.json"), headers=headers)
 
     def order_history(self, request: httpx.Request) -> httpx.Response:

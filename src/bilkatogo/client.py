@@ -13,6 +13,7 @@ from .const import (
     ALGOLIA_SEARCH_KEY,
     API_BASE_URL,
     API_HOST,
+    CART_COOKIE,
     CART_PARAMS,
     CURRENT_ORDER_SCAN_LIMIT,
     GIGYA_API_KEY,
@@ -82,6 +83,7 @@ class BilkaToGoClient:
         login_token = await self._gigya_login(self._password)
         jwt = await self._gigya_jwt(login_token)
         expires_at = datetime.now(UTC) + timedelta(seconds=JWT_LIFETIME_SECONDS)
+        self._http.cookies.delete(CART_COOKIE)
         response = await self._request(
             "POST", f"{API_BASE_URL}/auth/LoginJWT", params=WEB_PARAMS, headers={"jwt_token": jwt}
         )
