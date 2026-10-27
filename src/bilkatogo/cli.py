@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import io
 import json
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
@@ -572,4 +573,7 @@ def print_cart(found: Cart) -> None:
 
 
 def main() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8", errors=stream.errors)
     app()

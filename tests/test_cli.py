@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import sys
 from importlib.metadata import entry_points
@@ -762,3 +763,49 @@ def test_entry_point_without_the_cli_extra_explains_how_to_install_it(
     message = capsys.readouterr().err.strip()
     assert "bilkatogo[cli]" in message
     assert "\n" not in message
+
+
+@pytest.fixture
+def run_piped(bilka: FakeBilka, config_dir: Path, monkeypatch: pytest.MonkeyPatch):
+    async_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx, "AsyncClient", lambda **kwargs: async_client(transport=bilka.transport, **kwargs)
+    )
+    monkeypatch.setenv("BILKATOGO_CONFIG_DIR", str(config_dir))
+    monkeypatch.delenv("BILKATOGO_EMAIL", raising=False)
+    monkeypatch.delenv("BILKATOGO_PASSWORD", raising=False)
+    [script] = entry_points(group="console_scripts", name="bilkatogo")
+    main = script.load()
+
+    def run(*args: str) -> tuple[bytes, bytes]:
+        stdout = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        stderr = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        monkeypatch.setattr(sys, "argv", ["bilkatogo", *args])
+        monkeypatch.setattr(sys, "stdout", stdout)
+        monkeypatch.setattr(sys, "stderr", stderr)
+        with pytest.raises(SystemExit):
+            main()
+        stdout.flush()
+        stderr.flush()
+        return stdout.buffer.getvalue(), stderr.buffer.getvalue()
+
+    return run
+
+
+def test_piped_search_results_are_utf8(run_piped) -> None:
+    stdout, _ = run_piped("search", "skyr", "--email", EMAIL, "--password", PASSWORD)
+
+    assert "Skyr m. vanilje 0,2 % fedt øko".encode() in stdout
+
+
+def test_piped_json_parses_back_as_utf8(run_piped) -> None:
+    stdout, _ = run_piped("search", "skyr", "--json", "--email", EMAIL, "--password", PASSWORD)
+
+    names = [product["name"] for product in json.loads(stdout.decode("utf-8"))]
+    assert "Skyr m. vanilje 0,2 % fedt øko" in names
+
+
+def test_piped_errors_are_utf8(run_piped) -> None:
+    _, stderr = run_piped("search", "skyr", "--limit", "smør")
+
+    assert "smør".encode() in stderr
