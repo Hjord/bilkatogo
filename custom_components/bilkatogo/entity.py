@@ -5,13 +5,22 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from bilkatogo import OrderStatus
 
 from .const import DOMAIN, WEBSITE_URL
-from .coordinator import BilkaToGoCoordinator
+from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator
 
 UNRECOGNIZED_STATUS = "unrecognized"
 
 
 def status_option(status: OrderStatus) -> str:
     return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
+
+
+def account_id(entry: BilkaToGoConfigEntry) -> str:
+    """Key the device and entities on the account, so they survive re-adding it.
+
+    The config flow always sets the lower-cased email as the entry's unique ID.
+    """
+    assert entry.unique_id is not None
+    return entry.unique_id
 
 
 class BilkaToGoEntity(CoordinatorEntity[BilkaToGoCoordinator]):
@@ -21,9 +30,9 @@ class BilkaToGoEntity(CoordinatorEntity[BilkaToGoCoordinator]):
         super().__init__(coordinator)
         self.entity_description = description
         entry = coordinator.config_entry
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        self._attr_unique_id = f"{account_id(entry)}_{description.key}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
+            identifiers={(DOMAIN, account_id(entry))},
             name=entry.title,
             manufacturer="Bilka",
             model="BilkaToGo",

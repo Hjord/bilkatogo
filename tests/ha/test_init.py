@@ -2,12 +2,25 @@ from typing import Any
 
 import httpx
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.bilkatogo.const import DOMAIN
-from tests.fake_bilka import EMAIL, FakeBilka
+from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 from tests.ha.conftest import SetupIntegration
+
+
+def account_entry(*, minor_version: int = 2) -> MockConfigEntry:
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title=EMAIL,
+        unique_id=EMAIL,
+        minor_version=minor_version,
+        data={CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD},
+    )
 
 
 def stored_session(hass_storage: dict[str, Any], entry_id: str) -> dict[str, Any]:
@@ -52,11 +65,89 @@ async def test_device_links_to_the_bilkatogo_website(
 ) -> None:
     entry = await setup_integration()
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, EMAIL)})
 
     assert device is not None
+    assert device.config_entries == {entry.entry_id}
     assert device.entry_type is dr.DeviceEntryType.SERVICE
     assert device.configuration_url == "https://www.bilkatogo.dk"
+
+
+async def test_entities_are_keyed_on_the_account(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    entry = await setup_integration()
+
+    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+
+    assert {entity.unique_id for entity in entities} == {
+        f"{EMAIL}_{key}"
+        for key in (
+            "order_status",
+            "order_total",
+            "pickup_slot",
+            "pickup_point",
+            "pickup_code",
+            "substitutions",
+            "missing_items",
+            "ready_for_pickup",
+            "pickup_slots",
+        )
+    }
+
+
+async def test_re_adding_the_account_keeps_entity_settings(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    entry = await setup_integration()
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("sensor", DOMAIN, f"{EMAIL}_order_status")
+    assert entity_id is not None
+    registry.async_update_entity(entity_id, new_entity_id="sensor.bilka", name="Bilka")
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+
+    again = account_entry()
+    again.add_to_hass(hass)
+    await hass.config_entries.async_setup(again.entry_id)
+    await hass.async_block_till_done()
+
+    entity = registry.async_get("sensor.bilka")
+    assert entity is not None
+    assert entity.config_entry_id == again.entry_id
+    assert entity.name == "Bilka"
+
+
+async def test_entities_and_device_move_from_the_entry_to_the_account(
+    hass: HomeAssistant,
+) -> None:
+    entry = account_entry(minor_version=1)
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, entry.entry_id)}
+    )
+    old = er.async_get(hass).async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_order_status",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="my_order_status",
+    )
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.minor_version == 2
+    entity = er.async_get(hass).async_get(old.entity_id)
+    assert entity is not None
+    assert entity.unique_id == f"{EMAIL}_order_status"
+    assert entity.device_id == device.id
+    migrated = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, EMAIL)})
+    assert migrated is not None
+    assert migrated.id == device.id
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 1
 
 
 async def test_unload_and_remove_entry(

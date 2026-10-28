@@ -15,7 +15,7 @@ from tests.ha.conftest import SetupIntegration
 
 def order_status(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_order_status"
+        "sensor", DOMAIN, f"{entry.unique_id}_order_status"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -111,7 +111,7 @@ async def test_order_status_states_are_translated_in_danish_and_english(
 
 
 def sensor_state(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> State:
-    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")
+    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.unique_id}_{key}")
     assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None

@@ -383,6 +383,9 @@ Home Assistant also deletes the stored Bilka session and the record of which Sub
 Missing Items it already announced. To remove the integration's files too, remove BilkaToGo in
 HACS and restart Home Assistant.
 
+The entities are tied to the account, not to this setup of it. If you add the same account
+again, its entities come back with the names and entity IDs you gave them.
+
 ## Development
 
 Library and CLI:

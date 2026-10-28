@@ -47,6 +47,7 @@ def config_entry(hass: HomeAssistant) -> MockConfigEntry:
         domain=DOMAIN,
         title=EMAIL,
         unique_id=EMAIL,
+        minor_version=2,
         data={CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD},
     )
     entry.add_to_hass(hass)

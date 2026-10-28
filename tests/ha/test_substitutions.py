@@ -26,7 +26,7 @@ SUBSTITUTIONS = [
 
 def substitutions(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_substitutions"
+        "sensor", DOMAIN, f"{entry.unique_id}_substitutions"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -109,7 +109,7 @@ async def test_a_picked_up_order_fetches_its_details_once_after_a_restart(
 
     assert substitutions(hass, entry).state == "2"
     pickup_code = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_pickup_code"
+        "sensor", DOMAIN, f"{entry.unique_id}_pickup_code"
     )
     assert pickup_code is not None
     state = hass.states.get(pickup_code)

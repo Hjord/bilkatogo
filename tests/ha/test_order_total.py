@@ -23,7 +23,7 @@ BREAKDOWN = {
 
 def order_total(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_order_total"
+        "sensor", DOMAIN, f"{entry.unique_id}_order_total"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
