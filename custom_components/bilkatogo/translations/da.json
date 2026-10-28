@@ -38,6 +38,24 @@
         "name": "Klar til afhentning"
       }
     },
+    "calendar": {
+      "pickup_slots": {
+        "name": "Afhentningstider",
+        "state_attributes": {
+          "message": {
+            "state": {
+              "pickup": "BilkaToGo afhentning",
+              "delivery": "BilkaToGo levering"
+            }
+          },
+          "description": {
+            "state": {
+              "order": "Ordre {order_number}: {status}"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "order_status": {
         "name": "Ordrestatus",

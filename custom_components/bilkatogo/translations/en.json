@@ -38,6 +38,24 @@
         "name": "Ready for pickup"
       }
     },
+    "calendar": {
+      "pickup_slots": {
+        "name": "Pickup slots",
+        "state_attributes": {
+          "message": {
+            "state": {
+              "pickup": "BilkaToGo pickup",
+              "delivery": "BilkaToGo delivery"
+            }
+          },
+          "description": {
+            "state": {
+              "order": "Order {order_number}: {status}"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "order_status": {
         "name": "Order status",
