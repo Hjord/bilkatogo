@@ -1,8 +1,11 @@
 from datetime import datetime
 
-from homeassistant.components.calendar import CalendarEntity, CalendarEvent
+from homeassistant.components.calendar import (
+    CalendarEntity,
+    CalendarEntityDescription,
+    CalendarEvent,
+)
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -13,7 +16,7 @@ from .entity import BilkaToGoEntity
 
 PARALLEL_UPDATES = 0
 
-PICKUP_SLOTS = EntityDescription(key="pickup_slots", translation_key="pickup_slots")
+PICKUP_SLOTS = CalendarEntityDescription(key="pickup_slots", translation_key="pickup_slots")
 
 LEFT_OUT_STATUSES = frozenset({OrderStatus.CANCELLED, OrderStatus.SOLD_OUT})
 
