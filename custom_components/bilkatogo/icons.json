@@ -23,5 +23,13 @@
         "default": "mdi:store-marker"
       }
     }
+  },
+  "services": {
+    "add_to_cart": {
+      "service": "mdi:cart-plus"
+    },
+    "search": {
+      "service": "mdi:magnify"
+    }
   }
 }

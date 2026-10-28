@@ -146,6 +146,65 @@
     },
     "auth_failed": {
       "message": "Bilka afviste den gemte adgangskode: {error}"
+    },
+    "entry_not_found": {
+      "message": "Ingen BilkaToGo-konto har post-ID'et {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "BilkaToGo-kontoen {title} er ikke indlæst."
+    },
+    "no_entry_loaded": {
+      "message": "Ingen BilkaToGo-konto er indlæst."
+    },
+    "entry_required": {
+      "message": "Der er tilføjet mere end én BilkaToGo-konto. Vælg, hvilken du vil bruge."
+    },
+    "cart_change_rejected": {
+      "message": "Bilka ændrede ikke kurven: {error}"
+    },
+    "no_pickup_point": {
+      "message": "Din kurv har intet afhentningssted. Vælg først et afhentningssted på bilkatogo.dk."
+    },
+    "action_failed": {
+      "message": "Bilka kunne ikke gennemføre handlingen: {error}"
+    }
+  },
+  "services": {
+    "add_to_cart": {
+      "name": "Læg i kurv",
+      "description": "Lægger en vare i din BilkaToGo-kurv, oven i det, der allerede er i den.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "BilkaToGo-kontoen, der skal bruges. Kun nødvendig, hvis der er tilføjet mere end én."
+        },
+        "article_number": {
+          "name": "Varenummer",
+          "description": "Bilkas varenummer på varen, som søgehandlingen returnerer det."
+        },
+        "quantity": {
+          "name": "Antal",
+          "description": "Hvor mange der skal lægges i kurven."
+        }
+      }
+    },
+    "search": {
+      "name": "Søg efter varer",
+      "description": "Søger efter varer i den butik, der betjener din kurvs afhentningssted, med pris, lagerstatus og tilbud.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "BilkaToGo-kontoen, der skal bruges. Kun nødvendig, hvis der er tilføjet mere end én."
+        },
+        "query": {
+          "name": "Søgning",
+          "description": "Hvad der skal søges efter, fx skyr."
+        },
+        "limit": {
+          "name": "Grænse",
+          "description": "Det højeste antal varer, der returneres."
+        }
+      }
     }
   }
 }

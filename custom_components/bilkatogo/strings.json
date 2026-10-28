@@ -146,6 +146,65 @@
     },
     "auth_failed": {
       "message": "Bilka rejected the stored password: {error}"
+    },
+    "entry_not_found": {
+      "message": "No BilkaToGo account has the entry ID {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "The BilkaToGo account {title} is not loaded."
+    },
+    "no_entry_loaded": {
+      "message": "No BilkaToGo account is loaded."
+    },
+    "entry_required": {
+      "message": "More than one BilkaToGo account is added. Choose which one to use."
+    },
+    "cart_change_rejected": {
+      "message": "Bilka did not change the cart: {error}"
+    },
+    "no_pickup_point": {
+      "message": "Your cart has no pickup point. Choose a pickup point on bilkatogo.dk first."
+    },
+    "action_failed": {
+      "message": "Bilka could not complete the action: {error}"
+    }
+  },
+  "services": {
+    "add_to_cart": {
+      "name": "Add to cart",
+      "description": "Adds a product to your BilkaToGo cart, on top of what is already there.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The BilkaToGo account to use. Only needed when more than one is added."
+        },
+        "article_number": {
+          "name": "Article number",
+          "description": "Bilka's article number of the product, as the search action returns it."
+        },
+        "quantity": {
+          "name": "Quantity",
+          "description": "How many to add."
+        }
+      }
+    },
+    "search": {
+      "name": "Search products",
+      "description": "Searches products at the store serving your cart's pickup point, with price, stock and offers.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The BilkaToGo account to use. Only needed when more than one is added."
+        },
+        "query": {
+          "name": "Query",
+          "description": "What to search for, e.g. skyr."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "The most products to return."
+        }
+      }
     }
   }
 }

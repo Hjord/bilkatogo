@@ -189,6 +189,31 @@ Order Total is Bilka's estimate from the order history.
 An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
 not know yet; the code is in the attribute. Without any order the entities have no state.
 
+### Actions
+
+| Action | Fields | Response |
+|---|---|---|
+| `bilkatogo.add_to_cart` | `article_number`, `quantity` (default 1) | Optional: the Cart, with its Cart Lines (Product, Article Number, quantity, Price, line total), total, Deposit, Service Fee, Packaging, Discount, Pickup Point and Bilka's warnings |
+| `bilkatogo.search` | `query`, `limit` (default 10) | `products`: Article Number, name, brand, Price, Unit Price and unit, in stock, Offer and Multibuy Offer |
+
+`add_to_cart` adds to what is already in the Cart; it never places an Order. `search` searches
+at the Store serving the Cart's Pickup Point, so choose one on bilkatogo.dk first. With more
+than one account added, pass `config_entry_id`. A script that searches and adds the first hit:
+
+```yaml
+script:
+  add_skyr:
+    sequence:
+      - action: bilkatogo.search
+        data:
+          query: skyr
+          limit: 1
+        response_variable: found
+      - action: bilkatogo.add_to_cart
+        data:
+          article_number: "{{ found.products[0].article_number }}"
+```
+
 ### Event `bilkatogo_substitution`
 
 Fired once for every new substitution, with this data:
