@@ -6,7 +6,7 @@ from homeassistant.helpers.storage import Store
 
 from bilkatogo import MissingItem, OrderDetails, Substitution
 
-from .const import DOMAIN, EVENT_MISSING_ITEM, EVENT_SUBSTITUTION
+from .const import DOMAIN
 
 STORAGE_VERSION = 1
 
@@ -29,7 +29,11 @@ def missing_item_data(item: MissingItem) -> dict[str, Any]:
 
 
 class Announcer[T]:
-    """Fire an event once per item of an Order, remembering what was announced across restarts."""
+    """Announce each item of an Order once, remembering what was announced across restarts.
+
+    Each new item fires the bus event `bilkatogo_<event_type>` and is returned, so the event
+    entity of the same event type can fire it too.
+    """
 
     def __init__(
         self,
@@ -37,7 +41,7 @@ class Announcer[T]:
         entry_id: str,
         *,
         storage_suffix: str,
-        event: str,
+        event_type: str,
         key_field: str,
         items: Callable[[OrderDetails], Sequence[T]],
         data: Callable[[T], dict[str, Any]],
@@ -46,7 +50,7 @@ class Announcer[T]:
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}.{storage_suffix}"
         )
-        self._event = event
+        self.event_type = event_type
         self._key_field = key_field
         self._items = items
         self._data = data
@@ -58,14 +62,14 @@ class Announcer[T]:
             (item["order_number"], item[self._key_field]) for item in data.get("announced", [])
         }
 
-    async def async_announce(self, details: OrderDetails) -> None:
+    async def async_announce(self, details: OrderDetails) -> list[dict[str, Any]]:
         new = [
             item
             for item in self._items(details)
             if (details.order_number, getattr(item, self._key_field)) not in self._announced
         ]
         if not new:
-            return
+            return []
         for item in new:
             self._announced.add((details.order_number, getattr(item, self._key_field)))
         await self._store.async_save(
@@ -76,10 +80,10 @@ class Announcer[T]:
                 ]
             }
         )
-        for item in new:
-            self._hass.bus.async_fire(
-                self._event, {"order_number": details.order_number, **self._data(item)}
-            )
+        announced = [{"order_number": details.order_number, **self._data(item)} for item in new]
+        for data in announced:
+            self._hass.bus.async_fire(f"{DOMAIN}_{self.event_type}", data)
+        return announced
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
@@ -91,7 +95,7 @@ def announcers(hass: HomeAssistant, entry_id: str) -> tuple[Announcer[Any], ...]
             hass,
             entry_id,
             storage_suffix="substitutions",
-            event=EVENT_SUBSTITUTION,
+            event_type="substitution",
             key_field="original_product",
             items=lambda details: details.substitutions,
             data=substitution_data,
@@ -100,7 +104,7 @@ def announcers(hass: HomeAssistant, entry_id: str) -> tuple[Announcer[Any], ...]
             hass,
             entry_id,
             storage_suffix="missing_items",
-            event=EVENT_MISSING_ITEM,
+            event_type="missing_item",
             key_field="article_number",
             items=lambda details: details.missing_items,
             data=missing_item_data,

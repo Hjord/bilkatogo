@@ -1,10 +1,12 @@
 from collections.abc import Awaitable, Callable, Generator
+from typing import Any
 
 import httpx
 import pytest
 import respx
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
-from homeassistant.core import HomeAssistant
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy.assertion import SnapshotAssertion
@@ -13,6 +15,26 @@ from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
 type SetupIntegration = Callable[[], Awaitable[MockConfigEntry]]
+
+
+def event_entity_id(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> str:
+    entity_id = er.async_get(hass).async_get_entity_id("event", DOMAIN, f"{entry.unique_id}_{key}")
+    assert entity_id is not None
+    return entity_id
+
+
+def fired(state_changes: list[Event[Any]], entity_id: str) -> list[dict[str, Any]]:
+    """The events an event entity fired, in order: their event type and data."""
+    return [
+        {
+            key: value
+            for key, value in change.data["new_state"].attributes.items()
+            if key not in ("event_types", "friendly_name")
+        }
+        for change in state_changes
+        if change.data["entity_id"] == entity_id
+        and change.data["new_state"].state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+    ]
 
 
 @pytest.fixture

@@ -92,6 +92,8 @@ async def test_entities_are_keyed_on_the_account(
             "missing_items",
             "ready_for_pickup",
             "pickup_slots",
+            "substitution",
+            "missing_item",
         )
     }
 

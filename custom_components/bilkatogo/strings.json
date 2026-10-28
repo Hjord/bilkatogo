@@ -43,6 +43,55 @@
         "name": "Pickup slots"
       }
     },
+    "event": {
+      "substitution": {
+        "name": "Substitution",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "substitution": "Substitution"
+            }
+          },
+          "order_number": {
+            "name": "Order number"
+          },
+          "original_product": {
+            "name": "Original product"
+          },
+          "replacement_product": {
+            "name": "Replacement product"
+          },
+          "quantity": {
+            "name": "Quantity"
+          }
+        }
+      },
+      "missing_item": {
+        "name": "Missing item",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "missing_item": "Missing item"
+            }
+          },
+          "order_number": {
+            "name": "Order number"
+          },
+          "product": {
+            "name": "Product"
+          },
+          "article_number": {
+            "name": "Article number"
+          },
+          "ordered_quantity": {
+            "name": "Ordered quantity"
+          },
+          "missing_quantity": {
+            "name": "Missing quantity"
+          }
+        }
+      }
+    },
     "sensor": {
       "order_status": {
         "name": "Order status",

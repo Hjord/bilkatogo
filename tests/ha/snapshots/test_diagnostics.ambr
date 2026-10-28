@@ -2,6 +2,24 @@
 # name: test_diagnostics_keep_products_and_store_but_redact_personal_data
   dict({
     'data': dict({
+      'announced': dict({
+        'missing_item': list([
+        ]),
+        'substitution': list([
+          dict({
+            'order_number': '900000000001',
+            'original_product': 'Æbler',
+            'quantity': 4,
+            'replacement_product': 'Pærer',
+          }),
+          dict({
+            'order_number': '900000000001',
+            'original_product': 'Letmælk',
+            'quantity': 3,
+            'replacement_product': 'Minimælk',
+          }),
+        ]),
+      }),
       'details': dict({
         '_raw': dict({
           'deliveryAddress': '**REDACTED**',

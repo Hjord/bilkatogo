@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -43,6 +44,8 @@ class BilkaToGoData:
     order: Order | None
     details: OrderDetails | None = None
     orders: list[Order] = field(default_factory=list)
+    # What this update announced for the first time, by event type.
+    announced: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
 
 
 class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
@@ -83,10 +86,11 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
                 translation_placeholders={"error": str(err)},
             ) from err
         self.update_interval = polling_interval(order, dt_util.utcnow())
+        announced = {}
         if details:
             for announcer in self.announcers:
-                await announcer.async_announce(details)
-        return BilkaToGoData(order=order, details=details, orders=orders)
+                announced[announcer.event_type] = await announcer.async_announce(details)
+        return BilkaToGoData(order=order, details=details, orders=orders, announced=announced)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
         """Fetch Order Details once the Current Order is Packed or later.
