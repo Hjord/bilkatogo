@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -42,6 +42,7 @@ def polling_interval(order: Order | None, now: datetime) -> timedelta:
 class BilkaToGoData:
     order: Order | None
     details: OrderDetails | None = None
+    orders: list[Order] = field(default_factory=list)
 
 
 class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
@@ -66,7 +67,8 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
 
     async def _async_update_data(self) -> BilkaToGoData:
         try:
-            order = current_order(await self.client.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT))
+            orders = await self.client.get_orders(limit=CURRENT_ORDER_SCAN_LIMIT)
+            order = current_order(orders)
             details = await self._async_fetch_details(order)
         except InvalidCredentialsError as err:
             raise ConfigEntryAuthFailed(
@@ -84,7 +86,7 @@ class BilkaToGoCoordinator(DataUpdateCoordinator[BilkaToGoData]):
         if details:
             for announcer in self.announcers:
                 await announcer.async_announce(details)
-        return BilkaToGoData(order=order, details=details)
+        return BilkaToGoData(order=order, details=details, orders=orders)
 
     async def _async_fetch_details(self, order: Order | None) -> OrderDetails | None:
         """Fetch Order Details once the Current Order is Packed or later.

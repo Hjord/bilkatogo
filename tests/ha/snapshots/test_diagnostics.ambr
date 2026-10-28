@@ -400,6 +400,86 @@
         'status': 'packed',
         'status_code': 'Pakket',
       }),
+      'orders': list([
+        dict({
+          '_raw': dict({
+            'content': 'Æbler, Rugbrød',
+            'delivered': True,
+            'deliveryDate': '2026-10-27',
+            'deliveryInterval': dict({
+              'end': '14:00:00',
+              'start': '12:00:00',
+            }),
+            'name': '**REDACTED**',
+            'orderId': '900000000001',
+            'ordered': dict({
+              'channel': 'Web',
+              'date': '2026-10-26',
+              'time': '18:30:00',
+            }),
+            'orderedPrice': 51200,
+            'packedPrice': 50900,
+            'pickupzone': dict({
+              'address': '**REDACTED**',
+              'city': '**REDACTED**',
+              'home_delivery': False,
+              'location': 'Bilka Eksempelby',
+              'zipCode': '**REDACTED**',
+            }),
+            'status': 'Pakket',
+          }),
+          'content': 'Æbler, Rugbrød',
+          'delivered': True,
+          'home_delivery': False,
+          'order_number': '900000000001',
+          'ordered_at': '2026-10-26T18:30:00',
+          'ordered_price': dict({
+            '__type': "<class 'decimal.Decimal'>",
+            'repr': "Decimal('512.00')",
+          }),
+          'packed_price': dict({
+            '__type': "<class 'decimal.Decimal'>",
+            'repr': "Decimal('509.00')",
+          }),
+          'pickup_point': dict({
+            '_raw': dict({
+              'address': '**REDACTED**',
+              'city': '**REDACTED**',
+              'home_delivery': False,
+              'location': 'Bilka Eksempelby',
+              'zipCode': '**REDACTED**',
+            }),
+            'address': '**REDACTED**',
+            'city': '**REDACTED**',
+            'name': 'Bilka Eksempelby',
+            'store_id': None,
+            'zip_code': '**REDACTED**',
+          }),
+          'pickup_slot': dict({
+            '_raw': dict({
+              'deliveryDate': '2026-10-27',
+              'deliveryInterval': dict({
+                'end': '14:00:00',
+                'start': '12:00:00',
+              }),
+            }),
+            'date': dict({
+              '__type': "<class 'datetime.date'>",
+              'isoformat': '2026-10-27',
+            }),
+            'end': dict({
+              '__type': "<class 'datetime.time'>",
+              'isoformat': '14:00:00',
+            }),
+            'start': dict({
+              '__type': "<class 'datetime.time'>",
+              'isoformat': '12:00:00',
+            }),
+          }),
+          'status': 'packed',
+          'status_code': 'Pakket',
+        }),
+      ]),
     }),
     'entry': dict({
       'data': dict({

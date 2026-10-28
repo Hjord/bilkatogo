@@ -39,16 +39,30 @@ TO_REDACT = {
     "jwt_validation",
 }
 
-CUSTOMER_NAME_PATHS = (("data", "order", "_raw", "name"),)
+EACH = "*"
+
+CUSTOMER_NAME_PATHS = (
+    ("data", "order", "_raw", "name"),
+    ("data", "orders", EACH, "_raw", "name"),
+)
+
+
+def _redact_path(node: Any, path: tuple[str, ...]) -> None:
+    head, *rest = path
+    if head == EACH and isinstance(node, list):
+        for item in node:
+            _redact_path(item, tuple(rest))
+    elif not isinstance(node, dict) or head not in node:
+        return
+    elif rest:
+        _redact_path(node[head], tuple(rest))
+    else:
+        node[head] = REDACTED
 
 
 def _redact_paths(data: dict[str, Any], paths: tuple[tuple[str, ...], ...]) -> dict[str, Any]:
-    for *parents, key in paths:
-        node: Any = data
-        for parent in parents:
-            node = node.get(parent) if isinstance(node, dict) else None
-        if isinstance(node, dict) and key in node:
-            node[key] = REDACTED
+    for path in paths:
+        _redact_path(data, path)
     return data
 
 
