@@ -1,0 +1,90 @@
+rules:
+  # Bronze
+  action-setup: done
+  appropriate-polling:
+    status: done
+    comment: Every 60 minutes, and every 5 minutes from 3 hours before the Pickup Slot.
+  brands: done
+  common-modules: done
+  config-flow: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers. Its bus events are documented in the README.
+  entity-event-setup:
+    status: exempt
+    comment: Entities subscribe to no events; the coordinator updates them.
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters:
+    status: exempt
+    comment: The integration has no options flow.
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow: done
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: A BilkaToGo account is a cloud service with nothing to discover.
+  discovery-update-info:
+    status: exempt
+    comment: A BilkaToGo account is a cloud service with nothing to discover.
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: Each config entry has one service device, tied to the account.
+  entity-category:
+    status: exempt
+    comment: All entities are primary entities.
+  entity-device-class: done
+  entity-disabled-by-default:
+    status: exempt
+    comment: No entity is noisy or rarely used.
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow:
+    status: exempt
+    comment: The only settings are credentials. Reauthentication updates the password, and another email is another account.
+  repair-issues:
+    status: exempt
+    comment: The only problem the user can fix is a changed password, which reauthentication handles.
+  stale-devices:
+    status: exempt
+    comment: Each config entry has one service device, tied to the account.
+
+  # Platinum
+  async-dependency: done
+  inject-websession:
+    status: done
+    comment: Uses create_async_httpx_client, because Bilka's session lives in cookies.
+  strict-typing: done
