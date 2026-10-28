@@ -31,6 +31,7 @@ from .exceptions import (
     BilkaUnreachableError,
     CartChangeRejectedError,
     InvalidCredentialsError,
+    NoPickupPointError,
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
@@ -222,7 +223,7 @@ class BilkaToGoClient:
             else await self.get_cart_pickup_point()
         )
         if point is None or point.store_id is None:
-            raise BilkaToGoError("No Pickup Point chosen in the Cart; name one to search at")
+            raise NoPickupPointError("No Pickup Point chosen in the Cart; name one to search at")
         store_id = point.store_id
         params = urlencode(
             {

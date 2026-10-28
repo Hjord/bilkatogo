@@ -18,6 +18,10 @@ class UnknownPickupPointError(BilkaToGoError):
         self.name = name
 
 
+class NoPickupPointError(BilkaToGoError):
+    """No Pickup Point was named and none is chosen in the Cart."""
+
+
 class CartChangeRejectedError(BilkaToGoError):
     """Bilka applied a different quantity than asked to a Cart Line; the message is Bilka's.
 

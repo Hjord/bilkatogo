@@ -8,8 +8,8 @@ import pytest
 
 from bilkatogo import (
     BilkaToGoClient,
-    BilkaToGoError,
     BilkaUnreachableError,
+    NoPickupPointError,
     Offer,
     Product,
     UnexpectedResponseError,
@@ -130,7 +130,7 @@ async def test_unknown_pickup_point_does_not_search(bilka: FakeBilka) -> None:
 async def test_cart_without_a_pickup_point_asks_for_one(bilka: FakeBilka) -> None:
     bilka.cart_contents = {**bilka.cart_contents, "deliveryAddress": None}
 
-    with pytest.raises(BilkaToGoError, match="Pickup Point"):
+    with pytest.raises(NoPickupPointError, match="Pickup Point"):
         await search(bilka, "skyr")
 
     assert bilka.calls("algolia") == []

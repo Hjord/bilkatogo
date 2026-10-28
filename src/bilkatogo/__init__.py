@@ -7,6 +7,7 @@ from .exceptions import (
     BilkaUnreachableError,
     CartChangeRejectedError,
     InvalidCredentialsError,
+    NoPickupPointError,
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "FileTokenStorage",
     "InvalidCredentialsError",
     "MissingItem",
+    "NoPickupPointError",
     "Offer",
     "Order",
     "OrderDetails",
