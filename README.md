@@ -13,7 +13,8 @@ the same version.
 
 - [Library](#library): an async Python client for your orders, Pickup Points and product search.
 - [Command line](#command-line): the same from your terminal or a script.
-- [Home Assistant](#home-assistant): sensors and events for your Current Order.
+- [Home Assistant](#home-assistant): sensors, a calendar, actions and events for your Current
+  Order.
 
 ## Library
 
@@ -156,21 +157,52 @@ known to send, not every field it might add. `--redact` only works together with
 
 ## Home Assistant
 
+[BilkaToGo](https://www.bilkatogo.dk) is Bilka's online grocery shop in Denmark: you order on
+bilkatogo.dk and pick the order up at a Bilka store, or have it delivered. The integration follows
+your Current Order in Home Assistant: its Order Status, Pickup Slot, Pickup Code and Order Total,
+which products Bilka substituted or left out, and a calendar of your Pickup Slots. Actions
+search Bilka's products and add them to your Cart.
+
+### Use cases
+
+- Get a notification when the order is packed, with the Pickup Code at hand.
+- Hear about substitutions and Missing Items before you drive to the store.
+- Show the next Pickup Slot on a dashboard or in a shared family calendar.
+- Add groceries to the Cart by voice or from a shopping-list automation.
+
+### Supported accounts
+
+Any bilkatogo.dk customer account, for pickup at a Bilka store and for Home Delivery. Bilka
+only serves Denmark.
+
+### Installation
+
 1. Add the integration from the Home Assistant Marketplace (HACS) by searching for
    **BilkaToGo**, or add `https://github.com/nickknissen/bilkatogo` as a custom repository of
    type Integration. Restart Home Assistant afterwards.
 2. Go to **Settings > Devices & services > Add integration** and pick **BilkaToGo**.
-3. Sign in with the email and password you use on bilkatogo.dk. Add the integration once per
-   account.
+3. Fill in the fields below. Add the integration once per account.
 
-If the password changes, Home Assistant asks you to sign in again.
+| Field | Description |
+|---|---|
+| Email | The email address you sign in to bilkatogo.dk with. |
+| Password | Your bilkatogo.dk password. Home Assistant stores it, so it can sign in again when Bilka's session expires. |
+
+The integration has no options. If the password changes, Home Assistant asks you to sign in
+again.
+
+### Data updates
 
 The integration polls Bilka every 60 minutes, and every 5 minutes from 3 hours before the
-pickup slot starts until the order is picked up, not collected or cancelled.
+Pickup Slot starts until the order is picked up, not collected or cancelled. If you set your
+own polling interval, keep it at 5 minutes or more so the traffic still looks like a person
+checking their order. To update now, use the `homeassistant.update_entity` action on any
+BilkaToGo entity.
 
 ### Entities
 
-All entities describe the Current Order.
+All entities, except the calendar, describe the Current Order. Ready for pickup is on while the
+Current Order is Packed.
 
 | Entity | State | Attributes |
 |---|---|---|
@@ -181,6 +213,8 @@ All entities describe the Current Order.
 | Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, Order Total (DKK), Pickup Slot end |
 | Pickup Code | The code you enter at check-in | Order Number, Order Total (DKK) |
 | Pickup Point | The Bilka store you pick up from | Order Number, Order Total (DKK) |
+| Ready for pickup | On while the order is Packed | |
+| Pickup slots (calendar) | On during a Pickup Slot | |
 
 Substitutions, Missing Items, the Pickup Code and the Order Total breakdown (Deposit, Service
 Fee, Packaging, Delivery Fee, Discount) are fetched once the order is packed. Before that the
@@ -188,6 +222,11 @@ Order Total is Bilka's estimate from the order history.
 
 An Order Status of Unknown (`unrecognized`) means Bilka sent a status code the integration does
 not know yet; the code is in the attribute. Without any order the entities have no state.
+
+The calendar holds an event for each of your 20 most recent Orders that has a Pickup Slot,
+upcoming and past, except Cancelled and Sold Out Orders. An event spans the Pickup Slot, is
+called "BilkaToGo pickup" or "BilkaToGo delivery", lists the Order Number and Order Status,
+and has the Pickup Point as its location.
 
 ### Actions
 
@@ -271,6 +310,77 @@ automation:
             {{ trigger.event.data.product }}: {{ trigger.event.data.missing_quantity }}
             of {{ trigger.event.data.ordered_quantity }} missing.
 ```
+
+### Ready for pickup notification
+
+An automation that sends the Pickup Code once the order is packed. The entity IDs start with
+your account's email; replace them with yours from **Settings > Devices & services >
+BilkaToGo**.
+
+```yaml
+automation:
+  - alias: BilkaToGo ready for pickup
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.me_example_com_ready_for_pickup
+        to: "on"
+    actions:
+      - action: notify.notify
+        data:
+          message: >
+            Your groceries are packed. Pickup Code:
+            {{ states('sensor.me_example_com_pickup_code') }}.
+```
+
+### Known limitations
+
+- Bilka has no public API. The integration uses the same private API as bilkatogo.dk, which can
+  change without notice, and automated access may conflict with Bilka's terms.
+- The sensors follow one order, the Current Order. With several open orders, the others only
+  show in the calendar, which covers the 20 most recent Orders.
+- Updates come from polling, so a change at Bilka can take up to 60 minutes to show, or 5
+  minutes close to the Pickup Slot.
+- The Pickup Code, Substitutions, Missing Items and the Order Total breakdown are only known
+  once the order is packed.
+- The Home Delivery address is left out of entities and the calendar, as it is personal.
+- `add_to_cart` and `search` need a Pickup Point chosen on bilkatogo.dk. The integration never
+  places, changes or cancels an order.
+
+### Troubleshooting
+
+- **Home Assistant asks you to sign in again.** Bilka rejected the stored password, usually
+  because it was changed. Select **Reconfigure** on the BilkaToGo card under **Settings >
+  Devices & services** and enter the new password.
+- **The entities are unavailable.** Home Assistant could not reach Bilka, or Bilka answered
+  unexpectedly. The integration logs this once and retries on the next poll. If it lasts, check
+  that bilkatogo.dk works in a browser.
+- **The Order Status is Unknown.** Bilka sent a status the integration does not know. Open an
+  [issue](https://github.com/nickknissen/bilkatogo/issues) with the Bilka status code from the
+  attribute.
+- **`search` or `add_to_cart` fails with "no pickup point".** Choose a Pickup Point on
+  bilkatogo.dk, then try again.
+
+For more detail in the log, select **Enable debug logging** on the integration's page,
+reproduce the problem, then disable it again; Home Assistant then downloads the log. Or add this to `configuration.yaml`:
+
+```yaml
+logger:
+  logs:
+    custom_components.bilkatogo: debug
+    bilkatogo: debug
+```
+
+Attach the diagnostics (**Download diagnostics** on the integration's page) to an issue; they
+leave out your email, password, name, address, phone number and Pickup Code.
+
+### Removal
+
+1. Go to **Settings > Devices & services > BilkaToGo**.
+2. Open the menu (⋮) next to the account and select **Delete**.
+
+Home Assistant also deletes the stored Bilka session and the record of which Substitutions and
+Missing Items it already announced. To remove the integration's files too, remove BilkaToGo in
+HACS and restart Home Assistant.
 
 ## Development
 
