@@ -47,11 +47,6 @@
               "pickup": "BilkaToGo pickup",
               "delivery": "BilkaToGo delivery"
             }
-          },
-          "description": {
-            "state": {
-              "order": "Order {order_number}: {status}"
-            }
           }
         }
       }

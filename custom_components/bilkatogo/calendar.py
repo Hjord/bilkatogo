@@ -54,15 +54,18 @@ class BilkaToGoCalendar(BilkaToGoEntity, CalendarEntity):
 
     def _event(self, order: Order, slot: PickupSlot) -> CalendarEvent:
         kind = "delivery" if order.home_delivery else "pickup"
+        order_number = self._translate(
+            f"{TRANSLATIONS}.sensor.order_total.state_attributes.order_number.name"
+        )
+        status_label = self._translate(f"{TRANSLATIONS}.sensor.order_status.name")
         status = self._translate(
             f"{TRANSLATIONS}.sensor.order_status.state.{_status_option(order.status)}"
         )
-        description = self._translate(f"{ATTRIBUTES}.description.state.order")
         return CalendarEvent(
             start=slot.starts_at,
             end=slot.ends_at,
             summary=self._translate(f"{ATTRIBUTES}.message.state.{kind}"),
-            description=description.format(order_number=order.order_number, status=status),
+            description=f"{order_number}: {order.order_number}\n{status_label}: {status}",
             location=None if order.home_delivery else self._pickup_point_name(order),
             uid=order.order_number,
         )

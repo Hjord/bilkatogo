@@ -54,14 +54,14 @@ async def test_events_for_upcoming_and_past_orders(
             "start": "2026-10-27T12:00:00+01:00",
             "end": "2026-10-27T14:00:00+01:00",
             "summary": "BilkaToGo pickup",
-            "description": "Order 900000000001: Picked up",
+            "description": "Order number: 900000000001\nOrder status: Picked up",
             "location": "Bilka Eksempelby",
         },
         {
             "start": "2026-11-03T16:00:00+01:00",
             "end": "2026-11-03T18:00:00+01:00",
             "summary": "BilkaToGo pickup",
-            "description": "Order 900000000002: Received",
+            "description": "Order number: 900000000002\nOrder status: Received",
             "location": "Bilka Eksempelby",
         },
     ]
@@ -74,7 +74,9 @@ async def test_events_are_filtered_by_the_requested_range(
 
     events = await get_events(hass, entry, "2026-10-27T13:00:00+01:00", "2026-11-03T16:00:00+01:00")
 
-    assert [event["description"] for event in events] == ["Order 900000000001: Picked up"]
+    assert [event["description"] for event in events] == [
+        "Order number: 900000000001\nOrder status: Picked up"
+    ]
 
 
 @pytest.mark.parametrize(
@@ -93,7 +95,9 @@ async def test_orders_are_left_out(
 
     events = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
 
-    assert [event["description"] for event in events] == ["Order 900000000001: Picked up"]
+    assert [event["description"] for event in events] == [
+        "Order number: 900000000001\nOrder status: Picked up"
+    ]
 
 
 async def test_home_delivery_has_a_delivery_summary_and_no_location(
@@ -118,8 +122,8 @@ async def test_events_are_translated_in_danish(
     events = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
 
     assert [(event["summary"], event["description"]) for event in events] == [
-        ("BilkaToGo afhentning", "Ordre 900000000002: Modtaget"),
-        ("BilkaToGo levering", "Ordre 3: Modtaget"),
+        ("BilkaToGo afhentning", "Ordrenummer: 900000000002\nOrdrestatus: Modtaget"),
+        ("BilkaToGo levering", "Ordrenummer: 3\nOrdrestatus: Modtaget"),
     ]
 
 
@@ -152,7 +156,7 @@ async def test_off_before_a_slot_with_the_next_event(
     assert state is not None
     assert state.state == STATE_OFF
     assert state.attributes["message"] == "BilkaToGo pickup"
-    assert state.attributes["description"] == "Order 900000000002: Received"
+    assert state.attributes["description"] == "Order number: 900000000002\nOrder status: Received"
 
 
 async def test_on_during_a_slot_with_the_current_event(
@@ -165,7 +169,7 @@ async def test_on_during_a_slot_with_the_current_event(
 
     assert state is not None
     assert state.state == STATE_ON
-    assert state.attributes["description"] == "Order 900000000001: Picked up"
+    assert state.attributes["description"] == "Order number: 900000000001\nOrder status: Picked up"
 
 
 async def test_off_without_an_event_after_the_last_slot(
