@@ -4,7 +4,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from bilkatogo import OrderStatus
 
-from .const import DOMAIN
+from .const import DOMAIN, WEBSITE_URL
 from .coordinator import BilkaToGoCoordinator
 
 UNRECOGNIZED_STATUS = "unrecognized"
@@ -28,4 +28,5 @@ class BilkaToGoEntity(CoordinatorEntity[BilkaToGoCoordinator]):
             manufacturer="Bilka",
             model="BilkaToGo",
             entry_type=DeviceEntryType.SERVICE,
+            configuration_url=WEBSITE_URL,
         )

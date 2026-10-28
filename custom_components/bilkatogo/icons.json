@@ -1,20 +1,32 @@
 {
   "entity": {
+    "binary_sensor": {
+      "ready_for_pickup": {
+        "default": "mdi:basket-outline",
+        "state": {
+          "on": "mdi:basket-check"
+        }
+      }
+    },
     "sensor": {
       "order_status": {
-        "default": "mdi:basket"
+        "default": "mdi:basket",
+        "state": {
+          "processing": "mdi:progress-clock",
+          "received": "mdi:basket-outline",
+          "packed": "mdi:basket-check",
+          "picked_up": "mdi:check-circle-outline",
+          "not_collected": "mdi:basket-off",
+          "cancelled": "mdi:close-circle-outline",
+          "sold_out": "mdi:basket-remove",
+          "unrecognized": "mdi:help-circle-outline"
+        }
       },
       "substitutions": {
         "default": "mdi:swap-horizontal"
       },
       "missing_items": {
         "default": "mdi:cart-remove"
-      },
-      "order_total": {
-        "default": "mdi:cash"
-      },
-      "pickup_slot": {
-        "default": "mdi:clock-outline"
       },
       "pickup_code": {
         "default": "mdi:numeric"

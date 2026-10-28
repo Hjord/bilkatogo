@@ -3,7 +3,9 @@ from typing import Any
 import httpx
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
+from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import EMAIL, FakeBilka
 from tests.ha.conftest import SetupIntegration
 
@@ -43,6 +45,18 @@ async def test_setup_retries_when_bilka_is_unreachable(
     entry = await setup_integration()
 
     assert entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_device_links_to_the_bilkatogo_website(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    entry = await setup_integration()
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+
+    assert device is not None
+    assert device.entry_type is dr.DeviceEntryType.SERVICE
+    assert device.configuration_url == "https://www.bilkatogo.dk"
 
 
 async def test_unload_and_remove_entry(
