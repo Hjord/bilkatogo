@@ -40,15 +40,7 @@
     },
     "calendar": {
       "pickup_slots": {
-        "name": "Pickup slots",
-        "state_attributes": {
-          "message": {
-            "state": {
-              "pickup": "BilkaToGo pickup",
-              "delivery": "BilkaToGo delivery"
-            }
-          }
-        }
+        "name": "Pickup slots"
       }
     },
     "sensor": {

@@ -8,9 +8,8 @@ from homeassistant.util import dt as dt_util
 
 from bilkatogo import Order, OrderStatus, PickupSlot
 
-from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry
-from .entity import BilkaToGoEntity, status_option
+from .entity import BilkaToGoEntity
 
 PARALLEL_UPDATES = 0
 
@@ -18,8 +17,7 @@ PICKUP_SLOTS = EntityDescription(key="pickup_slots", translation_key="pickup_slo
 
 LEFT_OUT_STATUSES = frozenset({OrderStatus.CANCELLED, OrderStatus.SOLD_OUT})
 
-TRANSLATIONS = f"component.{DOMAIN}.entity"
-ATTRIBUTES = f"{TRANSLATIONS}.calendar.pickup_slots.state_attributes"
+EVENT_SUMMARY = "BilkaToGo"
 
 
 async def async_setup_entry(
@@ -52,19 +50,15 @@ class BilkaToGoCalendar(BilkaToGoEntity, CalendarEntity):
         return sorted(events, key=lambda event: event.start_datetime_local)
 
     def _event(self, order: Order, slot: PickupSlot) -> CalendarEvent:
-        kind = "delivery" if order.home_delivery else "pickup"
-        order_number = self._translate(
-            f"{TRANSLATIONS}.sensor.order_total.state_attributes.order_number.name"
-        )
-        status_label = self._translate(f"{TRANSLATIONS}.sensor.order_status.name")
-        status = self._translate(
-            f"{TRANSLATIONS}.sensor.order_status.state.{status_option(order.status)}"
-        )
+        """Describe an Order's Pickup Slot with Bilka's own data, which needs no translation.
+
+        Home Delivery shows as an event without a location; its address is personal.
+        """
         return CalendarEvent(
             start=slot.starts_at,
             end=slot.ends_at,
-            summary=self._translate(f"{ATTRIBUTES}.message.state.{kind}"),
-            description=f"{order_number}: {order.order_number}\n{status_label}: {status}",
+            summary=EVENT_SUMMARY,
+            description=f"#{order.order_number}",
             location=None if order.home_delivery else self._pickup_point_name(order),
             uid=order.order_number,
         )
@@ -72,8 +66,3 @@ class BilkaToGoCalendar(BilkaToGoEntity, CalendarEntity):
     @staticmethod
     def _pickup_point_name(order: Order) -> str | None:
         return order.pickup_point.name if order.pickup_point else None
-
-    def _translate(self, key: str) -> str:
-        return self.platform_data.platform_translations.get(
-            key, self.platform_data.default_language_platform_translations.get(key, key)
-        )

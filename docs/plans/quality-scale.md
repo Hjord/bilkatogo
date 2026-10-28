@@ -10,7 +10,7 @@ The integration already meets nearly every rule in code. The gaps are one CI fai
 
 CI's `hassfest` job failed for v0.4.0 because the calendar's event description held placeholders in an entity state translation. b26f10f builds the description from existing labels instead, and CI passes again.
 
-The calendar still reads its texts through `self.platform_data.platform_translations`, using fake `state_attributes` keys. HACS accepts that, but core reviewers would not: before a core PR, load the strings with `homeassistant.helpers.translation.async_get_translations(hass, language, "common", {DOMAIN})` from a top-level `"common"` section in `strings.json`.
+The calendar then still read its texts through `self.platform_data.platform_translations`, using fake `state_attributes` keys, which core reviewers would not accept. No core calendar translates its event text; they use the service's own data or fixed text. So the events now use Bilka's data only: the summary "BilkaToGo", the Order Number as the description and the Pickup Point as the location.
 
 ### Rule by rule
 
