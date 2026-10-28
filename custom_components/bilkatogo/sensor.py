@@ -18,7 +18,7 @@ from bilkatogo import Order, OrderStatus
 from .announcer import missing_item_data, substitution_data
 from .const import CURRENCY
 from .coordinator import BilkaToGoConfigEntry, BilkaToGoData
-from .entity import BilkaToGoEntity
+from .entity import BilkaToGoEntity, status_option
 
 PARALLEL_UPDATES = 0
 
@@ -34,13 +34,6 @@ def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
     if slot is None:
         return None
     return slot.starts_at if start else slot.ends_at
-
-
-UNRECOGNIZED_STATUS = "unrecognized"
-
-
-def _status_option(status: OrderStatus) -> str:
-    return UNRECOGNIZED_STATUS if status is OrderStatus.UNKNOWN else status.value
 
 
 def _order_price(order: Order) -> Decimal:
@@ -95,8 +88,8 @@ SENSORS: tuple[BilkaToGoSensorDescription, ...] = (
         key="order_status",
         translation_key="order_status",
         device_class=SensorDeviceClass.ENUM,
-        options=[_status_option(status) for status in OrderStatus],
-        value_fn=lambda data: _status_option(data.order.status) if data.order else None,
+        options=[status_option(status) for status in OrderStatus],
+        value_fn=lambda data: status_option(data.order.status) if data.order else None,
         attributes_fn=lambda data: {"status_code": data.order.status_code} if data.order else None,
     ),
     BilkaToGoSensorDescription(
