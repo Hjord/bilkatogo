@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 LOGGER = getLogger(__package__)
 
 DOMAIN = "bilkatogo"
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 CURRENCY = "DKK"
 
 EVENT_SUBSTITUTION = f"{DOMAIN}_substitution"

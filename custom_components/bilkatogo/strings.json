@@ -33,6 +33,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "ready_for_pickup": {
+        "name": "Ready for pickup"
+      }
+    },
     "sensor": {
       "order_status": {
         "name": "Order status",
