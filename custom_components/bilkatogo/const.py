@@ -8,6 +8,7 @@ LOGGER = getLogger(__package__)
 DOMAIN = "bilkatogo"
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.CALENDAR, Platform.SENSOR]
 CURRENCY = "DKK"
+WEBSITE_URL = "https://www.bilkatogo.dk"
 
 EVENT_SUBSTITUTION = f"{DOMAIN}_substitution"
 EVENT_MISSING_ITEM = f"{DOMAIN}_missing_item"

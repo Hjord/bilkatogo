@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs CI's ha-test job (ty, then pytest tests/ha) on Linux or in WSL.
+# Runs CI's ha-test job (ty, mypy, then pytest tests/ha) on Linux or in WSL.
 # From Windows: wsl.exe -e bash scripts/ha-test.sh [pytest args]
 set -euo pipefail
 
@@ -46,4 +46,5 @@ cd "$cache/src"
 export UV_PROJECT_ENVIRONMENT="$cache/venv" UV_PYTHON=3.14
 "$uv" sync -q --locked --no-default-groups --group ha
 "$uv" run --no-sync ty check custom_components tests/ha
+"$uv" run --no-sync mypy --strict --explicit-package-bases custom_components/bilkatogo
 "$uv" run --no-sync pytest -p no:cacheprovider tests/ha "$@"

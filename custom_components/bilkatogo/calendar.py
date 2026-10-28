@@ -10,8 +10,7 @@ from bilkatogo import Order, OrderStatus, PickupSlot
 
 from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry
-from .entity import BilkaToGoEntity
-from .sensor import _status_option
+from .entity import BilkaToGoEntity, status_option
 
 PARALLEL_UPDATES = 0
 
@@ -59,7 +58,7 @@ class BilkaToGoCalendar(BilkaToGoEntity, CalendarEntity):
         )
         status_label = self._translate(f"{TRANSLATIONS}.sensor.order_status.name")
         status = self._translate(
-            f"{TRANSLATIONS}.sensor.order_status.state.{_status_option(order.status)}"
+            f"{TRANSLATIONS}.sensor.order_status.state.{status_option(order.status)}"
         )
         return CalendarEvent(
             start=slot.starts_at,
