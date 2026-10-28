@@ -225,8 +225,9 @@ not know yet; the code is in the attribute. Without any order the entities have 
 
 The calendar holds an event for each of your 20 most recent Orders that has a Pickup Slot,
 upcoming and past, except Cancelled and Sold Out Orders. An event spans the Pickup Slot, is
-called "BilkaToGo pickup" or "BilkaToGo delivery", lists the Order Number and Order Status,
-and has the Pickup Point as its location.
+called "BilkaToGo", has the Order Number as its description and the Pickup Point as its
+location. A Home Delivery event has no location. The text is the same in every language; the
+Order Status sensor shows the status.
 
 ### Actions
 

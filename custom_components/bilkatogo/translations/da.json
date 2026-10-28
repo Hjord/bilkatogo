@@ -40,15 +40,7 @@
     },
     "calendar": {
       "pickup_slots": {
-        "name": "Afhentningstider",
-        "state_attributes": {
-          "message": {
-            "state": {
-              "pickup": "BilkaToGo afhentning",
-              "delivery": "BilkaToGo levering"
-            }
-          }
-        }
+        "name": "Afhentningstider"
       }
     },
     "sensor": {

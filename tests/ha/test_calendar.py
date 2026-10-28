@@ -53,15 +53,15 @@ async def test_events_for_upcoming_and_past_orders(
         {
             "start": "2026-10-27T12:00:00+01:00",
             "end": "2026-10-27T14:00:00+01:00",
-            "summary": "BilkaToGo pickup",
-            "description": "Order number: 900000000001\nOrder status: Picked up",
+            "summary": "BilkaToGo",
+            "description": "#900000000001",
             "location": "Bilka Eksempelby",
         },
         {
             "start": "2026-11-03T16:00:00+01:00",
             "end": "2026-11-03T18:00:00+01:00",
-            "summary": "BilkaToGo pickup",
-            "description": "Order number: 900000000002\nOrder status: Received",
+            "summary": "BilkaToGo",
+            "description": "#900000000002",
             "location": "Bilka Eksempelby",
         },
     ]
@@ -74,9 +74,7 @@ async def test_events_are_filtered_by_the_requested_range(
 
     events = await get_events(hass, entry, "2026-10-27T13:00:00+01:00", "2026-11-03T16:00:00+01:00")
 
-    assert [event["description"] for event in events] == [
-        "Order number: 900000000001\nOrder status: Picked up"
-    ]
+    assert [event["description"] for event in events] == ["#900000000001"]
 
 
 @pytest.mark.parametrize(
@@ -95,12 +93,10 @@ async def test_orders_are_left_out(
 
     events = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
 
-    assert [event["description"] for event in events] == [
-        "Order number: 900000000001\nOrder status: Picked up"
-    ]
+    assert [event["description"] for event in events] == ["#900000000001"]
 
 
-async def test_home_delivery_has_a_delivery_summary_and_no_location(
+async def test_home_delivery_has_no_location(
     hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka
 ) -> None:
     bilka.orders = [home_delivery(upcoming_order(bilka))]
@@ -108,23 +104,20 @@ async def test_home_delivery_has_a_delivery_summary_and_no_location(
 
     [event] = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
 
-    assert event["summary"] == "BilkaToGo delivery"
+    assert event["summary"] == "BilkaToGo"
     assert "location" not in event
 
 
-async def test_events_are_translated_in_danish(
+async def test_event_text_does_not_depend_on_the_language(
     hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka
 ) -> None:
     hass.config.language = "da"
-    bilka.orders = [upcoming_order(bilka), home_delivery(upcoming_order(bilka, orderId="3"))]
+    bilka.orders = [upcoming_order(bilka)]
     entry = await setup_integration()
 
-    events = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
+    [event] = await get_events(hass, entry, *OCTOBER_TO_NOVEMBER)
 
-    assert [(event["summary"], event["description"]) for event in events] == [
-        ("BilkaToGo afhentning", "Ordrenummer: 900000000002\nOrdrestatus: Modtaget"),
-        ("BilkaToGo levering", "Ordrenummer: 3\nOrdrestatus: Modtaget"),
-    ]
+    assert (event["summary"], event["description"]) == ("BilkaToGo", "#900000000002")
 
 
 async def test_no_pickup_code_in_an_event(
@@ -155,8 +148,8 @@ async def test_off_before_a_slot_with_the_next_event(
 
     assert state is not None
     assert state.state == STATE_OFF
-    assert state.attributes["message"] == "BilkaToGo pickup"
-    assert state.attributes["description"] == "Order number: 900000000002\nOrder status: Received"
+    assert state.attributes["message"] == "BilkaToGo"
+    assert state.attributes["description"] == "#900000000002"
 
 
 async def test_on_during_a_slot_with_the_current_event(
@@ -169,7 +162,7 @@ async def test_on_during_a_slot_with_the_current_event(
 
     assert state is not None
     assert state.state == STATE_ON
-    assert state.attributes["description"] == "Order number: 900000000001\nOrder status: Picked up"
+    assert state.attributes["description"] == "#900000000001"
 
 
 async def test_off_without_an_event_after_the_last_slot(
