@@ -10,16 +10,15 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from bilkatogo import Order, OrderStatus
 
 from .announcer import missing_item_data, substitution_data
-from .const import CURRENCY, DOMAIN
-from .coordinator import BilkaToGoConfigEntry, BilkaToGoCoordinator, BilkaToGoData
+from .const import CURRENCY
+from .coordinator import BilkaToGoConfigEntry, BilkaToGoData
+from .entity import BilkaToGoEntity
 
 PARALLEL_UPDATES = 0
 
@@ -167,24 +166,8 @@ async def async_setup_entry(
     async_add_entities(BilkaToGoSensor(entry.runtime_data, description) for description in SENSORS)
 
 
-class BilkaToGoSensor(CoordinatorEntity[BilkaToGoCoordinator], SensorEntity):
+class BilkaToGoSensor(BilkaToGoEntity, SensorEntity):
     entity_description: BilkaToGoSensorDescription
-    _attr_has_entity_name = True
-
-    def __init__(
-        self, coordinator: BilkaToGoCoordinator, description: BilkaToGoSensorDescription
-    ) -> None:
-        super().__init__(coordinator)
-        self.entity_description = description
-        entry = coordinator.config_entry
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title,
-            manufacturer="Bilka",
-            model="BilkaToGo",
-            entry_type=DeviceEntryType.SERVICE,
-        )
 
     @property
     def native_value(self) -> StateType | datetime:
