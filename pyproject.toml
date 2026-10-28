@@ -78,6 +78,7 @@ dev = [
     "ty>=0.0.92",
 ]
 ha = [
+    "mypy>=2.4.0",
     "pytest-homeassistant-custom-component==0.13.316",
     "respx>=0.22.0",
     "ty>=0.0.92",

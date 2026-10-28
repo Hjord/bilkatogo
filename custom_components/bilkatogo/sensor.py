@@ -25,7 +25,7 @@ PARALLEL_UPDATES = 0
 
 @dataclass(frozen=True, kw_only=True)
 class BilkaToGoSensorDescription(SensorEntityDescription):
-    value_fn: Callable[[BilkaToGoData], StateType | datetime]
+    value_fn: Callable[[BilkaToGoData], StateType | datetime | Decimal]
     attributes_fn: Callable[[BilkaToGoData], Mapping[str, Any] | None] = lambda _: None
 
 
@@ -163,7 +163,7 @@ class BilkaToGoSensor(BilkaToGoEntity, SensorEntity):
     entity_description: BilkaToGoSensorDescription
 
     @property
-    def native_value(self) -> StateType | datetime:
+    def native_value(self) -> StateType | datetime | Decimal:
         return self.entity_description.value_fn(self.coordinator.data)
 
     @property

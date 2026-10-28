@@ -315,10 +315,11 @@ class BilkaToGoClient:
                 "httpStatusCodes": "true",
             },
         )
-        try:
-            return data["sessionInfo"]["cookieValue"]
-        except KeyError, TypeError:
-            raise UnexpectedResponseError("Gigya login answered without a login token") from None
+        session = data.get("sessionInfo")
+        login_token = session.get("cookieValue") if isinstance(session, dict) else None
+        if not isinstance(login_token, str):
+            raise UnexpectedResponseError("Gigya login answered without a login token")
+        return login_token
 
     async def _gigya_jwt(self, login_token: str) -> str:
         data = await self._gigya(
@@ -329,10 +330,10 @@ class BilkaToGoClient:
                 "expiration": str(JWT_LIFETIME_SECONDS),
             },
         )
-        try:
-            return data["id_token"]
-        except KeyError:
-            raise UnexpectedResponseError("Gigya answered without a JWT") from None
+        jwt = data.get("id_token")
+        if not isinstance(jwt, str):
+            raise UnexpectedResponseError("Gigya answered without a JWT")
+        return jwt
 
     async def _gigya(self, method: str, form: dict[str, str]) -> dict[str, Any]:
         response = await self._request("POST", f"{GIGYA_BASE_URL}/{method}", data=form)
