@@ -99,6 +99,6 @@ async def test_order_total_is_translated_in_danish_and_english(
     assert en[f"{prefix}name"] == "Order total"
     assert da[f"{prefix}state_attributes.difference.name"] == "Forskel fra bestilling"
     assert en[f"{prefix}state_attributes.difference.name"] == "Difference from ordered total"
-    for attribute in ("order_number", "ordered_total", "difference", *BREAKDOWN):
+    for attribute in ("ordered_total", "difference", *BREAKDOWN):
         for translations in (da, en):
             assert f"{prefix}state_attributes.{attribute}.name" in translations

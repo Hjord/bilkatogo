@@ -108,6 +108,9 @@
         "state_attributes": {
           "status_code": {
             "name": "Bilka status code"
+          },
+          "order_number": {
+            "name": "Order number"
           }
         }
       },
@@ -130,9 +133,6 @@
       "order_total": {
         "name": "Order total",
         "state_attributes": {
-          "order_number": {
-            "name": "Order number"
-          },
           "ordered_total": {
             "name": "Ordered total"
           },
@@ -159,38 +159,16 @@
       "pickup_slot": {
         "name": "Pickup slot",
         "state_attributes": {
-          "order_number": {
-            "name": "Order number"
-          },
-          "order_total": {
-            "name": "Order total"
-          },
           "pickup_slot_end": {
             "name": "Pickup slot end"
           }
         }
       },
       "pickup_code": {
-        "name": "Pickup code",
-        "state_attributes": {
-          "order_number": {
-            "name": "Order number"
-          },
-          "order_total": {
-            "name": "Order total"
-          }
-        }
+        "name": "Pickup code"
       },
       "pickup_point": {
-        "name": "Pickup point",
-        "state_attributes": {
-          "order_number": {
-            "name": "Order number"
-          },
-          "order_total": {
-            "name": "Order total"
-          }
-        }
+        "name": "Pickup point"
       }
     }
   },
