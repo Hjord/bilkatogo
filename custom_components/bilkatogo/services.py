@@ -28,6 +28,7 @@ from .const import DOMAIN
 from .coordinator import BilkaToGoConfigEntry
 
 SERVICE_ADD_TO_CART = "add_to_cart"
+SERVICE_REMOVE_FROM_CART = "remove_from_cart"
 SERVICE_SEARCH = "search"
 
 ATTR_ARTICLE_NUMBER = "article_number"
@@ -42,6 +43,15 @@ ADD_TO_CART_SCHEMA = vol.Schema(
         vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
         vol.Required(ATTR_ARTICLE_NUMBER): cv.string,
         vol.Optional(ATTR_QUANTITY, default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
+    }
+)
+
+# Without a quantity, the whole Cart Line goes.
+REMOVE_FROM_CART_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        vol.Required(ATTR_ARTICLE_NUMBER): cv.string,
+        vol.Optional(ATTR_QUANTITY): vol.All(vol.Coerce(int), vol.Range(min=1)),
     }
 )
 
@@ -165,6 +175,16 @@ async def _add_to_cart(call: ServiceCall) -> ServiceResponse:
     return _cart_response(cart) if call.return_response else None
 
 
+async def _remove_from_cart(call: ServiceCall) -> ServiceResponse:
+    cart = await _run(
+        call,
+        lambda client: client.remove_from_cart(
+            call.data[ATTR_ARTICLE_NUMBER], call.data.get(ATTR_QUANTITY)
+        ),
+    )
+    return _cart_response(cart) if call.return_response else None
+
+
 async def _search(call: ServiceCall) -> ServiceResponse:
     products = await _run(
         call, lambda client: client.search(call.data[ATTR_QUERY], limit=call.data[ATTR_LIMIT])
@@ -179,6 +199,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_TO_CART,
         _add_to_cart,
         schema=ADD_TO_CART_SCHEMA,  # type: ignore[arg-type]
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REMOVE_FROM_CART,
+        _remove_from_cart,
+        schema=REMOVE_FROM_CART_SCHEMA,  # type: ignore[arg-type]
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(

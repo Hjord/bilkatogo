@@ -220,6 +220,24 @@
         }
       }
     },
+    "remove_from_cart": {
+      "name": "Remove from cart",
+      "description": "Removes a product, or some of it, from your BilkaToGo cart.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The BilkaToGo account to use. Only needed when more than one is added."
+        },
+        "article_number": {
+          "name": "Article number",
+          "description": "Bilka's article number of the product, as the search action returns it."
+        },
+        "quantity": {
+          "name": "Quantity",
+          "description": "How many to remove. Leave it out to remove the product entirely."
+        }
+      }
+    },
     "search": {
       "name": "Search products",
       "description": "Searches products at the store serving your cart's pickup point, with price, stock and offers.",

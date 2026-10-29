@@ -78,11 +78,12 @@ asyncio.run(main())
   are not Cart Lines; they show up as `packaging` and `service_fee`.
 - `set_cart_quantity(article_number, quantity)` sets how many of a Product the Cart holds (0
   removes the Cart Line), `add_to_cart(article_number, quantity=1)` adds to what is there,
-  `remove_from_cart(article_number)` removes it and `clear_cart()` empties the Cart. Each returns
-  the Cart as read after the change, with Bilka's messages about the change in `Cart.warnings`
-  (e.g. asking you to call customer service before ordering 99). When Bilka applies a different
-  quantity than asked, they raise `CartChangeRejectedError` with Bilka's message. The client
-  never places an Order.
+  `remove_from_cart(article_number, quantity=None)` takes `quantity` off what is there (the whole
+  Cart Line when it is `None` or more than the Cart holds) and `clear_cart()` empties the Cart.
+  Each returns the Cart as read after the change, with Bilka's messages about the change in
+  `Cart.warnings` (e.g. asking you to call customer service before ordering 99). When Bilka
+  applies a different quantity than asked, they raise `CartChangeRejectedError` with Bilka's
+  message. The client never places an Order.
 - Logging in on the website or in the app can undo Cart changes made through the library: Bilka
   replaces the Cart with the one that browser or app saw at its previous login, kept for up to
   7 days. Check the Cart after logging in there if you changed it from here.
@@ -112,6 +113,7 @@ bilkatogo search skyr --pickup-point "Bilka Vejle" --limit 5
 bilkatogo cart                  # your Cart Lines, the Cart total and your Pickup Point
 bilkatogo cart add 18381 --quantity 2   # add 2 of a Product by Article Number
 bilkatogo cart set 18381 5      # hold exactly 5
+bilkatogo cart remove 18381 --quantity 2   # take 2 off the Cart Line
 bilkatogo cart remove 18381     # take it out of the Cart
 ```
 
@@ -238,11 +240,13 @@ Order Status sensor shows the status.
 | Action | Fields | Response |
 |---|---|---|
 | `bilkatogo.add_to_cart` | `article_number`, `quantity` (default 1) | Optional: the Cart, with its Cart Lines (Product, Article Number, quantity, Price, line total), total, Deposit, Service Fee, Packaging, Discount, Pickup Point and Bilka's warnings |
+| `bilkatogo.remove_from_cart` | `article_number`, `quantity` (default: all of it) | Optional: the Cart, as for `add_to_cart` |
 | `bilkatogo.search` | `query`, `limit` (default 10) | `products`: Article Number, name, brand, Price, Unit Price and unit, in stock, Offer and Multibuy Offer |
 
-`add_to_cart` adds to what is already in the Cart; it never places an Order. `search` searches
-at the Store serving the Cart's Pickup Point, so choose one on bilkatogo.dk first. With more
-than one account added, pass `config_entry_id`. A script that searches and adds the first hit:
+`add_to_cart` adds to what is already in the Cart and `remove_from_cart` takes `quantity` off
+it, or the whole Cart Line without one; neither places an Order. `search` searches at the
+Store serving the Cart's Pickup Point, so choose one on bilkatogo.dk first. With more than one
+account added, pass `config_entry_id`. A script that searches and adds the first hit:
 
 ```yaml
 script:

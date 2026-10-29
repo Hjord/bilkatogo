@@ -16,6 +16,7 @@ from tests.ha.conftest import SetupIntegration
 
 ACTIONS = [
     ("add_to_cart", {"article_number": "19753"}),
+    ("remove_from_cart", {"article_number": "18381"}),
     ("search", {"query": "skyr"}),
 ]
 
@@ -91,15 +92,42 @@ async def test_a_rejected_change_carries_bilkas_message(
     assert rejected.value.translation_placeholders == {"error": "Maks. 2 pr. kunde"}
 
 
+@pytest.mark.parametrize("action", ["add_to_cart", "remove_from_cart"])
 async def test_quantity_must_be_at_least_one(
-    hass: HomeAssistant, setup_integration: SetupIntegration, cart: FakeBilka
+    hass: HomeAssistant, setup_integration: SetupIntegration, cart: FakeBilka, action: str
 ) -> None:
     await setup_integration()
 
     with pytest.raises(vol.Invalid):
-        await call(hass, "add_to_cart", {"article_number": "18381", "quantity": 0})
+        await call(hass, action, {"article_number": "18381", "quantity": 0})
 
     assert cart.calls("change_line_count") == []
+
+
+async def test_remove_from_cart_takes_a_quantity_off_and_returns_the_cart(
+    hass: HomeAssistant, setup_integration: SetupIntegration, cart: FakeBilka
+) -> None:
+    await setup_integration()
+
+    response = await call(hass, "remove_from_cart", {"article_number": "18381", "quantity": 3})
+
+    [request] = cart.calls("change_line_count")
+    assert request.url.params["count"] == "7"
+    assert response["lines"][0]["quantity"] == 7
+
+
+async def test_remove_from_cart_without_a_quantity_drops_the_cart_line(
+    hass: HomeAssistant, setup_integration: SetupIntegration, cart: FakeBilka
+) -> None:
+    await setup_integration()
+
+    response = await call(
+        hass, "remove_from_cart", {"article_number": "18364"}, return_response=False
+    )
+
+    [request] = cart.calls("change_line_count")
+    assert request.url.params["count"] == "0"
+    assert response is None
 
 
 async def test_search_returns_products_at_the_carts_store(
@@ -285,6 +313,7 @@ async def test_action_texts_are_translated(hass: HomeAssistant, language: str) -
 
     for action, fields in [
         ("add_to_cart", ["config_entry_id", "article_number", "quantity"]),
+        ("remove_from_cart", ["config_entry_id", "article_number", "quantity"]),
         ("search", ["config_entry_id", "query", "limit"]),
     ]:
         assert services[f"{prefix}.services.{action}.name"]
