@@ -45,11 +45,8 @@ async def _async_key_on_the_account(hass: HomeAssistant, entry: BilkaToGoConfigE
 
     await er.async_migrate_entries(hass, entry.entry_id, migrate)
     devices = dr.async_get(hass)
-    # Not async_get_device: Home Assistant 2026.10 deprecates it, and 2026.6 lacks its
-    # replacement.
-    for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
-        if (DOMAIN, entry.entry_id) in device.identifiers:
-            devices.async_update_device(device.id, new_identifiers={(DOMAIN, account_id(entry))})
+    if device := devices.async_get_device_by_identifier((DOMAIN, entry.entry_id), entry.entry_id):
+        devices.async_update_device(device.id, new_identifiers={(DOMAIN, account_id(entry))})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) -> bool:
