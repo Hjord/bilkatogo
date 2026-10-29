@@ -1,7 +1,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 from types import TracebackType
-from typing import Any, Self, TypeGuard
+from typing import Any, Self
 from urllib.parse import urlencode
 
 import httpx
@@ -44,14 +44,14 @@ def _order_number(order: str | Order) -> str:
     return order if isinstance(order, str) else order.order_number
 
 
-def _session_accepted(data: dict[str, Any] | None) -> TypeGuard[dict[str, Any]]:
-    """False for a 401 (`None`) or a 200 with Bilka's error body and a code, which Bilka
-    sends for an expired session (`{"code": 1, "msg": "Du er ikke logget ind"}`). An error
-    body with a null code is Bilka refusing the request itself, such as a Product that is not
-    available (`{"code": null, "msg": "Produktet … er desværre ikke aktuelt tilgængeligt"}`),
-    and goes back to the caller.
+def _logged_out(data: dict[str, Any]) -> bool:
+    """Bilka's error body for an expired session: `{"code": 1, "msg": "Du er ikke logget ind"}`.
+
+    A body with a null code is not one: that is Bilka refusing the request itself, such as an
+    unavailable Product (`{"code": null, "msg": "Produktet … ikke aktuelt tilgængeligt"}`),
+    and it goes back to the caller.
     """
-    return data is not None and not (data.get("code") is not None and "msg" in data)
+    return data.get("code") is not None and "msg" in data
 
 
 class BilkaToGoClient:
@@ -278,10 +278,10 @@ class BilkaToGoClient:
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()
         data = await self._shop_request(method, path, params, jwt)
-        if not _session_accepted(data):
+        if data is None or _logged_out(data):
             data = await self._shop_request(method, path, params, await self._login())
-        if not _session_accepted(data):
-            reason = f": {data['msg']}" if data and data.get("msg") else ""
+        if data is None or _logged_out(data):
+            reason = f": {data['msg']}" if data else ""
             raise UnexpectedResponseError(f"{path} rejected a fresh session{reason}")
         return data
 
