@@ -8,14 +8,18 @@
         'substitution': list([
           dict({
             'order_number': '900000000001',
+            'original_article_number': '1001',
             'original_product': 'Æbler',
             'quantity': 4,
+            'replacement_article_number': '1002',
             'replacement_product': 'Pærer',
           }),
           dict({
             'order_number': '900000000001',
+            'original_article_number': '1004',
             'original_product': 'Letmælk',
             'quantity': 3,
+            'replacement_article_number': '1005',
             'replacement_product': 'Minimælk',
           }),
         ]),
@@ -157,9 +161,9 @@
               '__type': "<class 'decimal.Decimal'>",
               'repr': "Decimal('12.00')",
             }),
+            'article_number': '1001',
             'category': 'Frugt & grønt',
             'name': 'Æbler',
-            'product_id': 1001,
             'quantity': 4,
             'substituted': True,
             'unavailable_reason': '',
@@ -183,9 +187,9 @@
               '__type': "<class 'decimal.Decimal'>",
               'repr': "Decimal('25.00')",
             }),
+            'article_number': '1003',
             'category': 'Frugt & grønt',
             'name': 'Rugbrød',
-            'product_id': 1003,
             'quantity': 1,
             'substituted': False,
             'unavailable_reason': '',
@@ -217,9 +221,9 @@
               '__type': "<class 'decimal.Decimal'>",
               'repr': "Decimal('11.00')",
             }),
+            'article_number': '1004',
             'category': 'Mejeri',
             'name': 'Letmælk',
-            'product_id': 1004,
             'quantity': 2,
             'substituted': True,
             'unavailable_reason': '',
@@ -307,8 +311,10 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
+            'original_article_number': '1001',
             'original_product': 'Æbler',
             'quantity': 4,
+            'replacement_article_number': '1002',
             'replacement_product': 'Pærer',
           }),
           dict({
@@ -334,8 +340,10 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
+            'original_article_number': '1004',
             'original_product': 'Letmælk',
             'quantity': 3,
+            'replacement_article_number': '1005',
             'replacement_product': 'Minimælk',
           }),
         ]),
@@ -371,14 +379,14 @@
         'delivered': True,
         'home_delivery': False,
         'order_number': '900000000001',
-        'ordered_at': '2026-10-26T18:30:00',
-        'ordered_price': dict({
-          '__type': "<class 'decimal.Decimal'>",
-          'repr': "Decimal('512.00')",
-        }),
-        'packed_price': dict({
+        'order_total': dict({
           '__type': "<class 'decimal.Decimal'>",
           'repr': "Decimal('509.00')",
+        }),
+        'ordered_at': '2026-10-26T18:30:00+01:00',
+        'ordered_total': dict({
+          '__type': "<class 'decimal.Decimal'>",
+          'repr': "Decimal('512.00')",
         }),
         'pickup_point': dict({
           '_raw': dict({
@@ -450,14 +458,14 @@
           'delivered': True,
           'home_delivery': False,
           'order_number': '900000000001',
-          'ordered_at': '2026-10-26T18:30:00',
-          'ordered_price': dict({
-            '__type': "<class 'decimal.Decimal'>",
-            'repr': "Decimal('512.00')",
-          }),
-          'packed_price': dict({
+          'order_total': dict({
             '__type': "<class 'decimal.Decimal'>",
             'repr': "Decimal('509.00')",
+          }),
+          'ordered_at': '2026-10-26T18:30:00+01:00',
+          'ordered_total': dict({
+            '__type': "<class 'decimal.Decimal'>",
+            'repr': "Decimal('512.00')",
           }),
           'pickup_point': dict({
             '_raw': dict({

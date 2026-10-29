@@ -26,7 +26,7 @@ async def async_setup_entry(
 
 
 class BilkaToGoEvent(BilkaToGoEntity, EventEntity):
-    """Fire once for each new Substitution or Missing Item, like its bus event."""
+    """Fire once for each new Substitution or Missing Item."""
 
     _fired_for: BilkaToGoData | None = None
 

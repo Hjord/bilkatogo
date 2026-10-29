@@ -5,7 +5,13 @@ from decimal import Decimal
 
 import pytest
 
-from bilkatogo import BilkaToGoClient, BilkaToGoError, OrderDetails, OrderStatus
+from bilkatogo import (
+    BilkaToGoClient,
+    BilkaToGoError,
+    OrderDetails,
+    OrderNotFoundError,
+    OrderStatus,
+)
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
 
@@ -49,7 +55,7 @@ async def test_order_lines_are_flattened_across_categories(bilka: FakeBilka) -> 
         ("Frugt & grønt", "Rugbrød", 1, Decimal("25.00")),
         ("Mejeri", "Letmælk", 2, Decimal("11.00")),
     ]
-    assert details.lines[1].product_id == 1003
+    assert details.lines[1].article_number == "1003"
     assert details.lines[1].substituted is False
     assert (
         details.lines[1]._raw
@@ -62,8 +68,15 @@ async def test_substitutions_pair_original_and_replacement_product(bilka: FakeBi
     details = await fetch(bilka, "900000000001")
 
     assert [
-        (s.original_product, s.replacement_product, s.quantity) for s in details.substitutions
-    ] == [("Æbler", "Pærer", 4), ("Letmælk", "Minimælk", 3)]
+        (
+            s.original_product,
+            s.original_article_number,
+            s.replacement_product,
+            s.replacement_article_number,
+            s.quantity,
+        )
+        for s in details.substitutions
+    ] == [("Æbler", "1001", "Pærer", "1002", 4), ("Letmælk", "1004", "Minimælk", "1005", 3)]
     assert details.lines[0].substituted is True
     assert details.substitutions[0]._raw == details.lines[0]._raw
 
@@ -183,3 +196,16 @@ async def test_unknown_order_number_raises_bilka_to_go_error(
 
     with pytest.raises(BilkaToGoError):
         await fetch(bilka, "900000000099")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("answer", [{}, {"order": None}])
+async def test_an_answer_without_the_order_raises_order_not_found(
+    bilka: FakeBilka, answer: dict
+) -> None:
+    bilka.script("order_details", answer)
+
+    with pytest.raises(OrderNotFoundError) as caught:
+        await fetch(bilka, "900000000099")
+
+    assert caught.value.order_number == "900000000099"

@@ -1,11 +1,14 @@
 from datetime import date, datetime, time
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from bilkatogo import BilkaToGoClient, InvalidCredentialsError, Order, OrderStatus
 from tests.conftest import MemoryTokenStorage
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka, load_fixture
+
+COPENHAGEN = ZoneInfo("Europe/Copenhagen")
 
 
 async def fetch_one(bilka: FakeBilka, order: dict) -> Order:
@@ -118,7 +121,7 @@ async def test_get_orders_logs_in_and_returns_typed_orders(
     assert upcoming.order_number == "900000000002"
     assert upcoming.status is OrderStatus.RECEIVED
     assert upcoming.status_code == "Bestilt"
-    assert upcoming.ordered_at == datetime(2026, 11, 1, 20, 15)
+    assert upcoming.ordered_at == datetime(2026, 11, 1, 20, 15, tzinfo=COPENHAGEN)
     assert upcoming.pickup_slot is not None
     assert upcoming.pickup_slot.date == date(2026, 11, 3)
     assert upcoming.pickup_slot.start == time(16, 0)
@@ -129,15 +132,15 @@ async def test_get_orders_logs_in_and_returns_typed_orders(
     assert upcoming.pickup_point.zip_code == "9999"
     assert upcoming.pickup_point.city == "Eksempelby"
     assert upcoming.home_delivery is False
-    assert upcoming.ordered_price == Decimal("456.00")
-    assert upcoming.packed_price == Decimal("0.00")
+    assert upcoming.ordered_total == Decimal("456.00")
+    assert upcoming.order_total == Decimal("0.00")
     assert upcoming.content == "Æbler, Havregryn, Letmælk"
 
     assert collected.order_number == "900000000001"
     assert collected.status is OrderStatus.PICKED_UP
     assert collected.delivered is True
-    assert collected.packed_price == Decimal("509.00")
-    assert str(collected.ordered_price) == "512.00"
+    assert collected.order_total == Decimal("509.00")
+    assert str(collected.ordered_total) == "512.00"
 
 
 @pytest.mark.asyncio
@@ -220,7 +223,7 @@ async def test_order_with_missing_optional_fields_still_parses(bilka: FakeBilka)
     assert order.pickup_point is None
     assert order.ordered_at is None
     assert order.home_delivery is False
-    assert order.ordered_price == Decimal("0.00")
+    assert order.ordered_total == Decimal("0.00")
 
 
 @pytest.mark.asyncio

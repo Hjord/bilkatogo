@@ -109,8 +109,8 @@ class Order(BilkaDataClass):
     pickup_point: PickupPoint | None
     home_delivery: bool
     delivered: bool
-    ordered_price: Decimal
-    packed_price: Decimal
+    ordered_total: Decimal
+    order_total: Decimal
     content: str
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
@@ -128,8 +128,8 @@ class Order(BilkaDataClass):
             pickup_point=PickupPoint.from_order(pickupzone) if pickupzone else None,
             home_delivery=bool((pickupzone or {}).get("home_delivery", False)),
             delivered=bool(data.get("delivered", False)),
-            ordered_price=kroner(data.get("orderedPrice")),
-            packed_price=kroner(data.get("packedPrice")),
+            ordered_total=kroner(data.get("orderedPrice")),
+            order_total=kroner(data.get("packedPrice")),
             content=data.get("content") or "",
         )
 
@@ -138,9 +138,12 @@ def _ordered_at(ordered: dict[str, Any] | None) -> datetime | None:
     if not ordered:
         return None
     try:
-        return datetime.fromisoformat(f"{ordered['date']}T{ordered.get('time') or '00:00:00'}")
+        ordered_at = datetime.fromisoformat(
+            f"{ordered['date']}T{ordered.get('time') or '00:00:00'}"
+        )
     except KeyError, TypeError, ValueError:
         return None
+    return ordered_at.replace(tzinfo=BILKA_TIME_ZONE)
 
 
 FINISHED_STATUSES = frozenset(

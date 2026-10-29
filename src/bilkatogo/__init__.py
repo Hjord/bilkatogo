@@ -8,6 +8,7 @@ from .exceptions import (
     CartChangeRejectedError,
     InvalidCredentialsError,
     NoPickupPointError,
+    OrderNotFoundError,
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
@@ -52,6 +53,7 @@ __all__ = [
     "Order",
     "OrderDetails",
     "OrderLine",
+    "OrderNotFoundError",
     "OrderStatus",
     "PickupCode",
     "PickupPoint",

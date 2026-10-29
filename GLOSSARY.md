@@ -47,11 +47,11 @@ The 8-digit code the customer enters at check-in when collecting the Order.
 _Avoid_: Check-in code, PIN
 
 **Order Total**:
-What the customer pays for the Order as it stands now, products after Discount plus Deposit, fees and delivery. It changes as Bilka packs the Order, Substitutes products and finds Missing Items.
+What the customer pays for the Order as it stands now, products after Discount plus Deposit, fees and delivery. It changes as Bilka packs the Order, Substitutes products and finds Missing Items. Bilka's `price` on the Order and `packedPrice` in the order history, where it is an estimate until the Order is Packed.
 _Avoid_: Price, amount, invoice, packed price
 
 **Ordered Total**:
-What the Order cost when the customer placed it. The Order Total is compared with it to see what packing changed.
+What the Order cost when the customer placed it. The Order Total is compared with it to see what packing changed. Bilka's `orderedPrice` in the order history.
 _Avoid_: Checkout price, original price
 
 **Deposit**:

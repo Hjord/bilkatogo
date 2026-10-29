@@ -28,11 +28,11 @@ from .const import (
     WEB_PARAMS,
 )
 from .exceptions import (
-    BilkaToGoError,
     BilkaUnreachableError,
     CartChangeRejectedError,
     InvalidCredentialsError,
     NoPickupPointError,
+    OrderNotFoundError,
     UnexpectedResponseError,
     UnknownPickupPointError,
 )
@@ -123,10 +123,10 @@ class BilkaToGoClient:
         order_number = _order_number(order)
         details = (await self.get_order_json(order_number)).get("order")
         if not details:
-            raise BilkaToGoError(f"Order {order_number} was not found")
+            raise OrderNotFoundError(order_number)
         summary = await self._find_order(order_number) if isinstance(order, str) else order
         return OrderDetails.from_dict(
-            details, ordered_total=summary.ordered_price if summary else None
+            details, ordered_total=summary.ordered_total if summary else None
         )
 
     async def get_current_order(self) -> OrderDetails | None:

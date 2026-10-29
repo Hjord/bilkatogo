@@ -174,7 +174,7 @@ def test_orders_json_output(invoke) -> None:
         "order_number": "900000000002",
         "status": "received",
         "status_code": "Bestilt",
-        "ordered_at": "2026-11-01T20:15:00",
+        "ordered_at": "2026-11-01T20:15:00+01:00",
         "pickup_slot": {"date": "2026-11-03", "start": "16:00:00", "end": "18:00:00"},
         "pickup_point": {
             "name": "Bilka Eksempelby",
@@ -185,8 +185,8 @@ def test_orders_json_output(invoke) -> None:
         },
         "home_delivery": False,
         "delivered": False,
-        "ordered_price": "456.00",
-        "packed_price": "0.00",
+        "ordered_total": "456.00",
+        "order_total": "0.00",
         "content": "Æbler, Havregryn, Letmælk",
     }
     assert collected["status"] == "picked_up"
@@ -386,12 +386,14 @@ def test_order_json_output(invoke) -> None:
     assert details["pickup_code"] == {"code": "12345678"}
     assert details["substitutions"][0] == {
         "original_product": "Æbler",
+        "original_article_number": "1001",
         "replacement_product": "Pærer",
+        "replacement_article_number": "1002",
         "quantity": 4,
     }
     assert details["lines"][1] == {
         "category": "Frugt & grønt",
-        "product_id": 1003,
+        "article_number": "1003",
         "name": "Rugbrød",
         "quantity": 1,
         "amount": "25.00",

@@ -30,7 +30,9 @@ SUBSTITUTED_TAGLINE = "erstattet"
 @dataclass
 class Substitution(BilkaDataClass):
     original_product: str
+    original_article_number: str
     replacement_product: str
+    replacement_article_number: str
     quantity: int
     _raw: dict[str, Any] | None = field(default=None, repr=False)
 
@@ -45,7 +47,9 @@ class Substitution(BilkaDataClass):
         return cls(
             _raw=data,
             original_product=_product_name(data),
+            original_article_number=_article_number(data),
             replacement_product=_product_name(replacement),
+            replacement_article_number=_article_number(replacement),
             quantity=int(replacement.get("quantity") or 0),
         )
 
@@ -69,7 +73,7 @@ class MissingItem(BilkaDataClass):
         return cls(
             _raw=data,
             product=_product_name(data),
-            article_number=str((data.get("product") or {}).get("objectID") or ""),
+            article_number=_article_number(data),
             ordered_quantity=ordered,
             missing_quantity=missing if 0 < missing < ordered else ordered,
         )
@@ -78,7 +82,7 @@ class MissingItem(BilkaDataClass):
 @dataclass
 class OrderLine(BilkaDataClass):
     category: str
-    product_id: int | None
+    article_number: str
     name: str
     quantity: int
     amount: Decimal
@@ -88,11 +92,10 @@ class OrderLine(BilkaDataClass):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], category: str = "") -> OrderLine:
-        product_id = (data.get("product") or {}).get("objectID")
         return cls(
             _raw=data,
             category=category,
-            product_id=int(product_id) if product_id is not None else None,
+            article_number=_article_number(data),
             name=_product_name(data),
             quantity=int(data.get("quantity") or 0),
             amount=kroner(data.get("amount")),
@@ -174,6 +177,10 @@ class OrderDetails(BilkaDataClass):
 
 def _product_name(data: dict[str, Any]) -> str:
     return (data.get("product") or {}).get("name") or ""
+
+
+def _article_number(data: dict[str, Any]) -> str:
+    return str((data.get("product") or {}).get("objectID") or "")
 
 
 def _quantity(value: Any) -> int:

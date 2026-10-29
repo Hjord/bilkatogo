@@ -58,8 +58,14 @@
           "original_product": {
             "name": "Original product"
           },
+          "original_article_number": {
+            "name": "Original article number"
+          },
           "replacement_product": {
             "name": "Replacement product"
+          },
+          "replacement_article_number": {
+            "name": "Replacement article number"
           },
           "quantity": {
             "name": "Quantity"

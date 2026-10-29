@@ -59,18 +59,23 @@ asyncio.run(main())
 - `token_storage` is any `TokenStorage` (async `load()` and `save(data)`). `FileTokenStorage`
   stores the session in a JSON file.
 - Errors derive from `BilkaToGoError`: `InvalidCredentialsError`, `BilkaUnreachableError`,
-  `UnexpectedResponseError`, `UnknownPickupPointError` and `CartChangeRejectedError`.
+  `UnexpectedResponseError`, `OrderNotFoundError`, `UnknownPickupPointError`,
+  `NoPickupPointError` and `CartChangeRejectedError`.
 - `Order.status` is an `OrderStatus` (Processing, Received, Packed, Picked Up, Not Collected,
   Cancelled, Sold Out, Unknown), using the same words as the website. The raw Bilka status code
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
 - `Product.article_number` from `search()` is Bilka's `objectID`, the same Article Number that
-  Order Lines and Missing Items carry.
-- `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
+  Order Lines, Cart Lines and Missing Items carry. A Substitution carries both the
+  `original_article_number` and the `replacement_article_number`.
+- `Order.ordered_at`, `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in
+  Europe/Copenhagen.
 - Amounts are `Decimal` kroner.
 - `OrderDetails.order_total` is the Order Total, broken down into `deposit`, `service_fee`,
   `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
   placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
-  Pass an `Order` to `get_order` instead of its number to skip that lookup.
+  Pass an `Order` to `get_order` instead of its number to skip that lookup. An `Order` from
+  `get_orders()` has the same `ordered_total` and `order_total`, the latter Bilka's estimate
+  until the Order is Packed.
 - `get_cart()` returns your `Cart`: its `lines` (each a `CartLine` with `product`,
   `article_number`, `quantity`, `price` and `line_total`, with any Multibuy Offer already
   applied in the line total), the Cart `total` broken down into `deposit`, `service_fee`,
@@ -211,14 +216,14 @@ Current Order is Packed.
 | Entity | State | Attributes |
 |---|---|---|
 | Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code, Order Number |
-| Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
+| Substitutions | Number of substituted products | List of Original Product, Replacement Product, their Article Numbers and the Replacement Product's quantity |
 | Missing Items | Number of products packed short without a replacement | List of Product, Article Number, ordered and missing quantity |
 | Order Total | What you pay for the order now (DKK) | Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
 | Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Pickup Slot end |
 | Pickup Code | The code you enter at check-in | |
 | Pickup Point | The Bilka store you pick up from | |
 | Ready for pickup | On while the order is Packed | |
-| Substitution (event) | When the last substitution fired | Order Number, Original Product, Replacement Product, quantity |
+| Substitution (event) | When the last substitution fired | Order Number, Original Product, Replacement Product, their Article Numbers, quantity |
 | Missing item (event) | When the last Missing Item fired | Order Number, Product, Article Number, ordered and missing quantity |
 | Pickup slots (calendar) | On during a Pickup Slot | |
 
@@ -272,7 +277,9 @@ restarts and reloads. Each event carries its data as attributes:
 |---|---|---|
 | Substitution | `order_number` | `900000000001` |
 | | `original_product` | `Arla minimælk 1 l` |
+| | `original_article_number` | `18381` |
 | | `replacement_product` | `Øko minimælk 1 l` |
+| | `replacement_article_number` | `19753` |
 | | `quantity` | `2` |
 | Missing item | `order_number` | `900000000003` |
 | | `product` | `Skyr` |
@@ -316,10 +323,6 @@ automation:
             {{ trigger.to_state.attributes.missing_quantity }}
             of {{ trigger.to_state.attributes.ordered_quantity }} missing.
 ```
-
-The integration still fires the same data on the event bus as `bilkatogo_substitution` and
-`bilkatogo_missing_item`. These bus events are deprecated and will be removed in a later
-release; trigger on the event entities instead.
 
 ### Ready for pickup notification
 

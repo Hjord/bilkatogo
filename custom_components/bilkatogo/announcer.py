@@ -14,7 +14,9 @@ STORAGE_VERSION = 1
 def substitution_data(substitution: Substitution) -> dict[str, Any]:
     return {
         "original_product": substitution.original_product,
+        "original_article_number": substitution.original_article_number,
         "replacement_product": substitution.replacement_product,
+        "replacement_article_number": substitution.replacement_article_number,
         "quantity": substitution.quantity,
     }
 
@@ -31,8 +33,11 @@ def missing_item_data(item: MissingItem) -> dict[str, Any]:
 class Announcer[T]:
     """Announce each item of an Order once, remembering what was announced across restarts.
 
-    Each new item fires the bus event `bilkatogo_<event_type>` and is returned, so the event
-    entity of the same event type can fire it too.
+    Each new item is returned, so the event entity of the same event type can fire it.
+
+    Items stored under `legacy_key_field` instead of `key_field` were announced by an older
+    version and are not announced again. They are rewritten under `key_field` the next time
+    their Order's items are announced.
     """
 
     def __init__(
@@ -43,47 +48,61 @@ class Announcer[T]:
         storage_suffix: str,
         event_type: str,
         key_field: str,
+        legacy_key_field: str | None = None,
         items: Callable[[OrderDetails], Sequence[T]],
         data: Callable[[T], dict[str, Any]],
     ) -> None:
-        self._hass = hass
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}.{storage_suffix}"
         )
         self.event_type = event_type
         self._key_field = key_field
+        self._legacy_key_field = legacy_key_field
         self._items = items
         self._data = data
         self._announced: set[tuple[str, str]] = set()
+        self._legacy: set[tuple[str, str]] = set()
 
     async def async_load(self) -> None:
         data = await self._store.async_load() or {}
-        self._announced = {
-            (item["order_number"], item[self._key_field]) for item in data.get("announced", [])
-        }
+        for item in data.get("announced", []):
+            if self._key_field in item:
+                self._announced.add((item["order_number"], item[self._key_field]))
+            elif self._legacy_key_field in item:
+                self._legacy.add((item["order_number"], item[self._legacy_key_field]))
 
     async def async_announce(self, details: OrderDetails) -> list[dict[str, Any]]:
-        new = [
-            item
-            for item in self._items(details)
-            if (details.order_number, getattr(item, self._key_field)) not in self._announced
+        order_number = details.order_number
+        legacy = {key for number, key in self._legacy if number == order_number}
+        self._legacy -= {(order_number, key) for key in legacy}
+        changed = bool(legacy)
+        new = []
+        for item in self._items(details):
+            key = (order_number, getattr(item, self._key_field))
+            if key in self._announced:
+                continue
+            self._announced.add(key)
+            changed = True
+            if (
+                self._legacy_key_field is None
+                or getattr(item, self._legacy_key_field) not in legacy
+            ):
+                new.append(item)
+        if changed:
+            await self._async_save()
+        return [{"order_number": order_number, **self._data(item)} for item in new]
+
+    async def _async_save(self) -> None:
+        announced = [
+            {"order_number": order_number, self._key_field: key}
+            for order_number, key in sorted(self._announced)
         ]
-        if not new:
-            return []
-        for item in new:
-            self._announced.add((details.order_number, getattr(item, self._key_field)))
-        await self._store.async_save(
-            {
-                "announced": [
-                    {"order_number": order_number, self._key_field: key}
-                    for order_number, key in sorted(self._announced)
-                ]
-            }
-        )
-        announced = [{"order_number": details.order_number, **self._data(item)} for item in new]
-        for data in announced:
-            self._hass.bus.async_fire(f"{DOMAIN}_{self.event_type}", data)
-        return announced
+        if self._legacy_key_field is not None:
+            announced += [
+                {"order_number": order_number, self._legacy_key_field: key}
+                for order_number, key in sorted(self._legacy)
+            ]
+        await self._store.async_save({"announced": announced})
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
@@ -96,7 +115,9 @@ def announcers(hass: HomeAssistant, entry_id: str) -> tuple[Announcer[Any], ...]
             entry_id,
             storage_suffix="substitutions",
             event_type="substitution",
-            key_field="original_product",
+            key_field="original_article_number",
+            # Up to 0.5.0, Substitutions were keyed on the Original Product's name.
+            legacy_key_field="original_product",
             items=lambda details: details.substitutions,
             data=substitution_data,
         ),

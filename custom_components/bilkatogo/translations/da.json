@@ -58,8 +58,14 @@
           "original_product": {
             "name": "Oprindelig vare"
           },
+          "original_article_number": {
+            "name": "Oprindeligt varenummer"
+          },
           "replacement_product": {
             "name": "Erstatningsvare"
+          },
+          "replacement_article_number": {
+            "name": "Erstatningsvarens varenummer"
           },
           "quantity": {
             "name": "Antal"
