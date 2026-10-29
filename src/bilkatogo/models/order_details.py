@@ -31,6 +31,7 @@ SUBSTITUTED_TAGLINE = "erstattet"
 class Substitution(BilkaDataClass):
     original_product: str
     original_article_number: str
+    ordered_quantity: int
     replacement_product: str
     replacement_article_number: str
     quantity: int
@@ -48,6 +49,7 @@ class Substitution(BilkaDataClass):
             _raw=data,
             original_product=_product_name(data),
             original_article_number=_article_number(data),
+            ordered_quantity=int(data.get("quantity") or 0),
             replacement_product=_product_name(replacement),
             replacement_article_number=_article_number(replacement),
             quantity=int(replacement.get("quantity") or 0),

@@ -281,8 +281,8 @@ def test_order_prints_details_and_substitutions(invoke, bilka: FakeBilka) -> Non
         "Delivery Fee  0.00 kr",
         "Discount      0.00 kr",
         "Substitutions",
-        "  Æbler -> 4 x Pærer",
-        "  Letmælk -> 3 x Minimælk",
+        "  4 x Æbler -> 4 x Pærer",
+        "  2 x Letmælk -> 3 x Minimælk",
         "Missing Items none",
     ]
     assert len(bilka.calls("gigya_login")) == 1
@@ -347,7 +347,7 @@ def test_order_lists_missing_items_after_substitutions(invoke) -> None:
     assert result.exit_code == 0, result.output
     assert result.output.splitlines()[-5:] == [
         "Substitutions",
-        "  Letmælk -> 3 x Minimælk",
+        "  2 x Letmælk -> 3 x Minimælk",
         "Missing Items",
         "  Skyr: 2 of 4 missing",
         "  Havregryn: 1 of 1 missing",
@@ -387,6 +387,7 @@ def test_order_json_output(invoke) -> None:
     assert details["substitutions"][0] == {
         "original_product": "Æbler",
         "original_article_number": "1001",
+        "ordered_quantity": 4,
         "replacement_product": "Pærer",
         "replacement_article_number": "1002",
         "quantity": 4,

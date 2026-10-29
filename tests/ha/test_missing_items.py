@@ -132,6 +132,7 @@ async def test_event_entities_are_translated_in_danish_and_english(
                 "order_number",
                 "original_product",
                 "original_article_number",
+                "ordered_quantity",
                 "replacement_product",
                 "replacement_article_number",
                 "quantity",
