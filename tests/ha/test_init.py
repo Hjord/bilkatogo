@@ -65,10 +65,9 @@ async def test_device_links_to_the_bilkatogo_website(
 ) -> None:
     entry = await setup_integration()
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, EMAIL)})
+    [device] = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
 
-    assert device is not None
-    assert device.config_entries == {entry.entry_id}
+    assert device.identifiers == {(DOMAIN, EMAIL)}
     assert device.entry_type is dr.DeviceEntryType.SERVICE
     assert device.configuration_url == "https://www.bilkatogo.dk"
 
@@ -146,10 +145,9 @@ async def test_entities_and_device_move_from_the_entry_to_the_account(
     assert entity is not None
     assert entity.unique_id == f"{EMAIL}_order_status"
     assert entity.device_id == device.id
-    migrated = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, EMAIL)})
-    assert migrated is not None
+    [migrated] = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     assert migrated.id == device.id
-    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 1
+    assert migrated.identifiers == {(DOMAIN, EMAIL)}
 
 
 async def test_unload_and_remove_entry(

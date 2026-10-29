@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Framework :: AsyncIO",
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.14.2"
 dependencies = [
     "httpx>=0.28.1",
     "tzdata; sys_platform == 'win32'",
@@ -79,7 +79,9 @@ dev = [
 ]
 ha = [
     "mypy>=2.4.0",
-    "pytest-homeassistant-custom-component==0.13.316",
+    # Home Assistant 2026.10.4. CI's ha-versions job also tests the oldest one hacs.json
+    # allows and the next beta.
+    "pytest-homeassistant-custom-component==0.13.375",
     "respx>=0.22.0",
     "ty>=0.0.92",
 ]
