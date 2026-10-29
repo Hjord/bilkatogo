@@ -5,6 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from bilkatogo import REQUEST_TIMEOUT_SECONDS
 from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
@@ -26,6 +27,14 @@ async def test_user_adds_account_with_email_and_password(hass: HomeAssistant) ->
     assert result["title"] == EMAIL
     assert result["data"] == {CONF_EMAIL: EMAIL, CONF_PASSWORD: PASSWORD}
     assert result["result"].unique_id == EMAIL
+
+
+async def test_the_login_waits_for_a_slow_bilka(hass: HomeAssistant, bilka: FakeBilka) -> None:
+    await start_flow(hass)
+
+    # The first login is the flow's; setting up the new entry logs in again.
+    login = bilka.calls("gigya_login")[0]
+    assert login.extensions["timeout"]["read"] == REQUEST_TIMEOUT_SECONDS
 
 
 async def test_wrong_password_shows_invalid_auth(hass: HomeAssistant) -> None:

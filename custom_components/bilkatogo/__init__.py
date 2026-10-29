@@ -8,7 +8,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.helpers.typing import ConfigType
 
-from bilkatogo import BilkaToGoClient
+from bilkatogo import REQUEST_TIMEOUT_SECONDS, BilkaToGoClient
 
 from .announcer import announcers
 from .const import DOMAIN, PLATFORMS
@@ -54,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BilkaToGoConfigEntry) ->
         entry.data[CONF_EMAIL],
         entry.data[CONF_PASSWORD],
         token_storage=HomeAssistantTokenStorage(hass, entry.entry_id),
-        httpx_client=create_async_httpx_client(hass),
+        httpx_client=create_async_httpx_client(hass, timeout=REQUEST_TIMEOUT_SECONDS),
     )
     coordinator = BilkaToGoCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
