@@ -16,7 +16,7 @@ OCTOBER_TO_NOVEMBER = ("2026-10-01T00:00:00+01:00", "2026-12-01T00:00:00+01:00")
 
 def calendar_id(hass: HomeAssistant, entry: MockConfigEntry) -> str:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "calendar", DOMAIN, f"{entry.entry_id}_pickup_slots"
+        "calendar", DOMAIN, f"{entry.unique_id}_pickup_slots"
     )
     assert entity_id is not None
     return entity_id

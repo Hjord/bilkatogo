@@ -15,7 +15,7 @@ from tests.ha.conftest import SetupIntegration
 
 def order_status(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_order_status"
+        "sensor", DOMAIN, f"{entry.unique_id}_order_status"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -31,6 +31,7 @@ async def test_order_status_shows_the_current_order(
     state = order_status(hass, entry)
     assert state.state == "received"
     assert state.attributes["status_code"] == "Bestilt"
+    assert state.attributes["order_number"] == "900000000002"
     assert state.attributes["options"] == [
         "processing",
         "received",
@@ -88,6 +89,20 @@ async def test_order_status_is_unknown_without_orders(
     state = order_status(hass, entry)
     assert state.state == STATE_UNKNOWN
     assert "status_code" not in state.attributes
+    assert "order_number" not in state.attributes
+
+
+async def test_order_status_attributes_are_translated_in_danish_and_english(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    await setup_integration()
+    prefix = f"component.{DOMAIN}.entity.sensor.order_status.state_attributes."
+
+    da = await async_get_translations(hass, "da", "entity", [DOMAIN])
+    en = await async_get_translations(hass, "en", "entity", [DOMAIN])
+
+    assert da[f"{prefix}order_number.name"] == "Ordrenummer"
+    assert en[f"{prefix}order_number.name"] == "Order number"
 
 
 async def test_order_status_states_are_translated_in_danish_and_english(
@@ -111,7 +126,7 @@ async def test_order_status_states_are_translated_in_danish_and_english(
 
 
 def sensor_state(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> State:
-    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")
+    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.unique_id}_{key}")
     assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
@@ -129,8 +144,6 @@ async def test_pickup_slot_start_is_a_copenhagen_timestamp(
     assert state.state == "2026-11-03T15:00:00+00:00"
     assert state.attributes["device_class"] == "timestamp"
     assert state.attributes["pickup_slot_end"] == "2026-11-03T18:00:00+01:00"
-    assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["order_total"] == 456.0
 
 
 async def test_pickup_point_shows_the_current_orders_store(
@@ -140,8 +153,17 @@ async def test_pickup_point_shows_the_current_orders_store(
 
     state = sensor_state(hass, entry, "pickup_point")
     assert state.state == "Bilka Eksempelby"
-    assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["order_total"] == 456.0
+
+
+async def test_order_number_and_order_total_are_not_repeated(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    entry = await setup_integration()
+
+    for key in ("order_total", "pickup_slot", "pickup_point", "pickup_code"):
+        attributes = sensor_state(hass, entry, key).attributes
+        assert "order_number" not in attributes
+        assert "order_total" not in attributes
 
 
 async def test_pickup_code_shows_once_the_current_order_is_packed(
@@ -155,16 +177,12 @@ async def test_pickup_code_shows_once_the_current_order_is_packed(
     assert sensor_state(hass, entry, "pickup_code").state == STATE_UNKNOWN
     assert bilka.calls("order_details") == []
 
-    bilka.orders[0] = {**bilka.orders[0], "status": "Pakket", "packedPrice": 44950}
+    bilka.orders[0] = {**bilka.orders[0], "status": "Pakket"}
     freezer.tick(timedelta(minutes=60))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
 
-    state = sensor_state(hass, entry, "pickup_code")
-    assert state.state == "87654321"
-    assert state.attributes["order_number"] == "900000000002"
-    assert state.attributes["order_total"] == 449.5
-    assert type(state.attributes["order_total"]) is float
+    assert sensor_state(hass, entry, "pickup_code").state == "87654321"
 
 
 async def test_pickup_sensors_are_unknown_without_orders(

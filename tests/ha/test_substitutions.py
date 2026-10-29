@@ -1,9 +1,10 @@
 from datetime import timedelta
 from typing import Any
 
+import httpx
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.const import STATE_UNKNOWN
+from homeassistant.const import EVENT_STATE_CHANGED, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
@@ -14,7 +15,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import FakeBilka
-from tests.ha.conftest import SetupIntegration
+from tests.ha.conftest import SetupIntegration, event_entity_id, fired
 
 ORDER_NUMBER = "900000000001"
 
@@ -26,7 +27,7 @@ SUBSTITUTIONS = [
 
 def substitutions(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_substitutions"
+        "sensor", DOMAIN, f"{entry.unique_id}_substitutions"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -109,7 +110,7 @@ async def test_a_picked_up_order_fetches_its_details_once_after_a_restart(
 
     assert substitutions(hass, entry).state == "2"
     pickup_code = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_pickup_code"
+        "sensor", DOMAIN, f"{entry.unique_id}_pickup_code"
     )
     assert pickup_code is not None
     state = hass.states.get(pickup_code)
@@ -149,6 +150,47 @@ async def test_each_substitution_is_announced_once_from_received_to_picked_up(
     await next_update(hass, freezer)
     assert substitutions(hass, entry).state == "2"
     assert len(events) == 2
+
+
+async def test_the_substitution_entity_fires_once_for_each_substitution(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
+    set_status(bilka, "Bestilt")
+    entry = await setup_integration()
+
+    set_status(bilka, "Pakket")
+    await next_update(hass, freezer)
+    await next_update(hass, freezer)
+
+    assert fired(state_changes, event_entity_id(hass, entry, "substitution")) == [
+        {"event_type": "substitution", "order_number": ORDER_NUMBER, **substitution}
+        for substitution in SUBSTITUTIONS
+    ]
+
+
+async def test_the_substitution_entity_does_not_fire_again_after_a_failed_update(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    set_status(bilka, "Pakket")
+    entry = await setup_integration()
+    entity_id = event_entity_id(hass, entry, "substitution")
+    before = hass.states.get(entity_id)
+    assert before is not None
+
+    bilka.script("order_history", httpx.ConnectError("down"))
+    await next_update(hass, freezer)
+    await next_update(hass, freezer)
+
+    after = hass.states.get(entity_id)
+    assert after is not None
+    assert (after.state, after.attributes) == (before.state, before.attributes)
 
 
 async def test_announced_substitutions_survive_a_restart(

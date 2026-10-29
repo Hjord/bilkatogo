@@ -8,6 +8,14 @@
         }
       }
     },
+    "event": {
+      "substitution": {
+        "default": "mdi:swap-horizontal"
+      },
+      "missing_item": {
+        "default": "mdi:cart-remove"
+      }
+    },
     "sensor": {
       "order_status": {
         "default": "mdi:basket",

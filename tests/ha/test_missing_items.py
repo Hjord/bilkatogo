@@ -2,8 +2,10 @@ from datetime import timedelta
 from typing import Any
 
 from freezegun.api import FrozenDateTimeFactory
+from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.translation import async_get_translations
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_capture_events,
@@ -12,7 +14,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import FakeBilka
-from tests.ha.conftest import SetupIntegration
+from tests.ha.conftest import SetupIntegration, event_entity_id, fired
 
 ORDER_NUMBER = "900000000003"
 
@@ -29,7 +31,7 @@ MISSING_ITEMS = [
 
 def missing_items(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_missing_items"
+        "sensor", DOMAIN, f"{entry.unique_id}_missing_items"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -100,6 +102,43 @@ async def test_each_missing_item_is_announced_once_from_received_to_picked_up(
     await next_update(hass, freezer)
     assert missing_items(hass, entry).state == "2"
     assert len(events) == 2
+
+
+async def test_the_missing_item_entity_fires_for_missing_items_found_at_setup(
+    hass: HomeAssistant, setup_integration: SetupIntegration, bilka: FakeBilka
+) -> None:
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
+    set_status(bilka, "Pakket")
+
+    entry = await setup_integration()
+
+    assert fired(state_changes, event_entity_id(hass, entry, "missing_item")) == [
+        {"event_type": "missing_item", "order_number": ORDER_NUMBER, **item}
+        for item in MISSING_ITEMS
+    ]
+
+
+async def test_event_entities_are_translated_in_danish_and_english(
+    hass: HomeAssistant, setup_integration: SetupIntegration
+) -> None:
+    await setup_integration()
+    prefix = f"component.{DOMAIN}.entity.event."
+
+    da = await async_get_translations(hass, "da", "entity", [DOMAIN])
+    en = await async_get_translations(hass, "en", "entity", [DOMAIN])
+
+    assert da[f"{prefix}substitution.name"] == "Erstatningsvare"
+    assert da[f"{prefix}missing_item.name"] == "Manglende vare"
+    assert en[f"{prefix}substitution.name"] == "Substitution"
+    assert en[f"{prefix}missing_item.name"] == "Missing item"
+    for key, attributes in (
+        ("substitution", ("order_number", "original_product", "replacement_product", "quantity")),
+        ("missing_item", ("order_number", *MISSING_ITEMS[0])),
+    ):
+        for translations in (da, en):
+            assert f"{prefix}{key}.state_attributes.event_type.state.{key}" in translations
+            for attribute in attributes:
+                assert f"{prefix}{key}.state_attributes.{attribute}.name" in translations
 
 
 async def test_announced_missing_items_survive_a_restart(

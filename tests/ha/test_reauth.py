@@ -35,7 +35,7 @@ def reauth_flows(hass: HomeAssistant, entry: MockConfigEntry) -> list:
 
 def order_status(hass: HomeAssistant, entry: MockConfigEntry) -> str:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_order_status"
+        "sensor", DOMAIN, f"{entry.unique_id}_order_status"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)

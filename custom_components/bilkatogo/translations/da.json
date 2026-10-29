@@ -43,6 +43,55 @@
         "name": "Afhentningstider"
       }
     },
+    "event": {
+      "substitution": {
+        "name": "Erstatningsvare",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "substitution": "Erstatningsvare"
+            }
+          },
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "original_product": {
+            "name": "Oprindelig vare"
+          },
+          "replacement_product": {
+            "name": "Erstatningsvare"
+          },
+          "quantity": {
+            "name": "Antal"
+          }
+        }
+      },
+      "missing_item": {
+        "name": "Manglende vare",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "missing_item": "Manglende vare"
+            }
+          },
+          "order_number": {
+            "name": "Ordrenummer"
+          },
+          "product": {
+            "name": "Vare"
+          },
+          "article_number": {
+            "name": "Varenummer"
+          },
+          "ordered_quantity": {
+            "name": "Bestilt antal"
+          },
+          "missing_quantity": {
+            "name": "Manglende antal"
+          }
+        }
+      }
+    },
     "sensor": {
       "order_status": {
         "name": "Ordrestatus",
@@ -59,6 +108,9 @@
         "state_attributes": {
           "status_code": {
             "name": "Bilka-statuskode"
+          },
+          "order_number": {
+            "name": "Ordrenummer"
           }
         }
       },
@@ -81,9 +133,6 @@
       "order_total": {
         "name": "Ordretotal",
         "state_attributes": {
-          "order_number": {
-            "name": "Ordrenummer"
-          },
           "ordered_total": {
             "name": "Ordretotal ved bestilling"
           },
@@ -110,38 +159,16 @@
       "pickup_slot": {
         "name": "Afhentningstidspunkt",
         "state_attributes": {
-          "order_number": {
-            "name": "Ordrenummer"
-          },
-          "order_total": {
-            "name": "Ordretotal"
-          },
           "pickup_slot_end": {
             "name": "Afhentning slutter"
           }
         }
       },
       "pickup_code": {
-        "name": "Afhentningskode",
-        "state_attributes": {
-          "order_number": {
-            "name": "Ordrenummer"
-          },
-          "order_total": {
-            "name": "Ordretotal"
-          }
-        }
+        "name": "Afhentningskode"
       },
       "pickup_point": {
-        "name": "Afhentningssted",
-        "state_attributes": {
-          "order_number": {
-            "name": "Ordrenummer"
-          },
-          "order_total": {
-            "name": "Ordretotal"
-          }
-        }
+        "name": "Afhentningssted"
       }
     }
   },

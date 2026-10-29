@@ -16,7 +16,7 @@ from tests.ha.conftest import SetupIntegration
 
 def ready_for_pickup(hass: HomeAssistant, entry: MockConfigEntry) -> State:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "binary_sensor", DOMAIN, f"{entry.entry_id}_ready_for_pickup"
+        "binary_sensor", DOMAIN, f"{entry.unique_id}_ready_for_pickup"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)

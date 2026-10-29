@@ -6,12 +6,14 @@ from homeassistant.const import Platform
 LOGGER = getLogger(__package__)
 
 DOMAIN = "bilkatogo"
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.CALENDAR, Platform.SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.CALENDAR,
+    Platform.EVENT,
+    Platform.SENSOR,
+]
 CURRENCY = "DKK"
 WEBSITE_URL = "https://www.bilkatogo.dk"
-
-EVENT_SUBSTITUTION = f"{DOMAIN}_substitution"
-EVENT_MISSING_ITEM = f"{DOMAIN}_missing_item"
 
 UPDATE_INTERVAL = timedelta(minutes=60)
 FAST_UPDATE_INTERVAL = timedelta(minutes=5)

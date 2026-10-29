@@ -206,14 +206,16 @@ Current Order is Packed.
 
 | Entity | State | Attributes |
 |---|---|---|
-| Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code |
+| Order Status | Processing, Received, Packed, Picked Up, Not Collected, Cancelled, Sold Out or Unknown | Bilka status code, Order Number |
 | Substitutions | Number of substituted products | List of Original Product, Replacement Product and the Replacement Product's quantity |
 | Missing Items | Number of products packed short without a replacement | List of Product, Article Number, ordered and missing quantity |
-| Order Total | What you pay for the order now (DKK) | Order Number, Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
-| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Order Number, Order Total (DKK), Pickup Slot end |
-| Pickup Code | The code you enter at check-in | Order Number, Order Total (DKK) |
-| Pickup Point | The Bilka store you pick up from | Order Number, Order Total (DKK) |
+| Order Total | What you pay for the order now (DKK) | Ordered Total, difference from the Ordered Total (negative when you pay less), Deposit, Service Fee, Packaging, Delivery Fee, Discount |
+| Pickup Slot | Start of the pickup slot (timestamp, Europe/Copenhagen) | Pickup Slot end |
+| Pickup Code | The code you enter at check-in | |
+| Pickup Point | The Bilka store you pick up from | |
 | Ready for pickup | On while the order is Packed | |
+| Substitution (event) | When the last substitution fired | Order Number, Original Product, Replacement Product, quantity |
+| Missing item (event) | When the last Missing Item fired | Order Number, Product, Article Number, ordered and missing quantity |
 | Pickup slots (calendar) | On during a Pickup Slot | |
 
 Substitutions, Missing Items, the Pickup Code and the Order Total breakdown (Deposit, Service
@@ -254,63 +256,64 @@ script:
           article_number: "{{ found.products[0].article_number }}"
 ```
 
-### Event `bilkatogo_substitution`
+### Substitution and Missing item events
 
-Fired once for every new substitution, with this data:
+The Substitution event entity fires once for every new substitution, and the Missing item
+event entity once for every new Missing Item. Items that already fired are remembered across
+restarts and reloads. Each event carries its data as attributes:
 
-| Field | Example |
-|---|---|
-| `order_number` | `900000000001` |
-| `original_product` | `Arla minimælk 1 l` |
-| `replacement_product` | `Øko minimælk 1 l` |
-| `quantity` | `2` |
+| Event entity | Attribute | Example |
+|---|---|---|
+| Substitution | `order_number` | `900000000001` |
+| | `original_product` | `Arla minimælk 1 l` |
+| | `replacement_product` | `Øko minimælk 1 l` |
+| | `quantity` | `2` |
+| Missing item | `order_number` | `900000000003` |
+| | `product` | `Skyr` |
+| | `article_number` | `932058` |
+| | `ordered_quantity` | `4` |
+| | `missing_quantity` | `2` |
 
-Substitutions that already fired are remembered across restarts and reloads. An automation
-that sends a notification:
+An automation that sends a notification for each substitution. `not_from: unavailable` keeps
+it quiet when the entity comes back after a reload or after Bilka was unreachable:
 
 ```yaml
 automation:
   - alias: BilkaToGo substitution
     triggers:
-      - trigger: event
-        event_type: bilkatogo_substitution
+      - trigger: state
+        entity_id: event.me_example_com_substitution
+        not_from: unavailable
     actions:
       - action: notify.notify
         data:
           message: >
-            {{ trigger.event.data.original_product }} was replaced by
-            {{ trigger.event.data.replacement_product }}
-            ({{ trigger.event.data.quantity }}).
+            {{ trigger.to_state.attributes.original_product }} was replaced by
+            {{ trigger.to_state.attributes.replacement_product }}
+            ({{ trigger.to_state.attributes.quantity }}).
 ```
 
-### Event `bilkatogo_missing_item`
-
-Fired once for every new Missing Item, with this data:
-
-| Field | Example |
-|---|---|
-| `order_number` | `900000000003` |
-| `product` | `Skyr` |
-| `article_number` | `932058` |
-| `ordered_quantity` | `4` |
-| `missing_quantity` | `2` |
-
-Missing Items that already fired are remembered across restarts and reloads. An automation
-that sends a notification:
+And one for each Missing Item:
 
 ```yaml
 automation:
   - alias: BilkaToGo missing item
     triggers:
-      - trigger: event
-        event_type: bilkatogo_missing_item
+      - trigger: state
+        entity_id: event.me_example_com_missing_item
+        not_from: unavailable
     actions:
       - action: notify.notify
         data:
           message: >
-            {{ trigger.event.data.product }}: {{ trigger.event.data.missing_quantity }}
-            of {{ trigger.event.data.ordered_quantity }} missing.
+            {{ trigger.to_state.attributes.product }}:
+            {{ trigger.to_state.attributes.missing_quantity }}
+            of {{ trigger.to_state.attributes.ordered_quantity }} missing.
 ```
+
+The integration still fires the same data on the event bus as `bilkatogo_substitution` and
+`bilkatogo_missing_item`. These bus events are deprecated and will be removed in a later
+release; trigger on the event entities instead.
 
 ### Ready for pickup notification
 
@@ -382,6 +385,9 @@ leave out your email, password, name, address, phone number and Pickup Code.
 Home Assistant also deletes the stored Bilka session and the record of which Substitutions and
 Missing Items it already announced. To remove the integration's files too, remove BilkaToGo in
 HACS and restart Home Assistant.
+
+The entities are tied to the account, not to this setup of it. If you add the same account
+again, its entities come back with the names and entity IDs you gave them.
 
 ## Development
 
