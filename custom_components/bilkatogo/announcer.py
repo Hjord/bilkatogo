@@ -33,8 +33,7 @@ def missing_item_data(item: MissingItem) -> dict[str, Any]:
 class Announcer[T]:
     """Announce each item of an Order once, remembering what was announced across restarts.
 
-    Each new item fires the bus event `bilkatogo_<event_type>` and is returned, so the event
-    entity of the same event type can fire it too.
+    Each new item is returned, so the event entity of the same event type can fire it.
 
     Items stored under `legacy_key_field` instead of `key_field` were announced by an older
     version and are not announced again. They are rewritten under `key_field` the next time
@@ -53,7 +52,6 @@ class Announcer[T]:
         items: Callable[[OrderDetails], Sequence[T]],
         data: Callable[[T], dict[str, Any]],
     ) -> None:
-        self._hass = hass
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}.{storage_suffix}"
         )
@@ -92,10 +90,7 @@ class Announcer[T]:
                 new.append(item)
         if changed:
             await self._async_save()
-        announced = [{"order_number": order_number, **self._data(item)} for item in new]
-        for data in announced:
-            self._hass.bus.async_fire(f"{DOMAIN}_{self.event_type}", data)
-        return announced
+        return [{"order_number": order_number, **self._data(item)} for item in new]
 
     async def _async_save(self) -> None:
         announced = [

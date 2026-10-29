@@ -142,16 +142,20 @@ async def test_each_substitution_is_announced_once_from_received_to_picked_up(
     bilka: FakeBilka,
     freezer: FrozenDateTimeFactory,
 ) -> None:
-    events = async_capture_events(hass, "bilkatogo_substitution")
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
     set_status(bilka, "Bestilt")
     entry = await setup_integration()
-    assert events == []
+    entity_id = event_entity_id(hass, entry, "substitution")
+    assert fired(state_changes, entity_id) == []
 
     set_status(bilka, "Pakket")
     await next_update(hass, freezer)
-    assert [event.data for event in events] == [
-        {"order_number": ORDER_NUMBER, **substitution} for substitution in SUBSTITUTIONS
+    assert fired(state_changes, entity_id) == [
+        {"event_type": "substitution", "order_number": ORDER_NUMBER, **substitution}
+        for substitution in SUBSTITUTIONS
     ]
+    last_fired = hass.states.get(entity_id)
+    assert last_fired is not None
 
     await next_update(hass, freezer)
     assert await hass.config_entries.async_reload(entry.entry_id)
@@ -161,7 +165,10 @@ async def test_each_substitution_is_announced_once_from_received_to_picked_up(
     set_status(bilka, "Faktureret")
     await next_update(hass, freezer)
     assert substitutions(hass, entry).state == "2"
-    assert len(events) == 2
+    # Each update is an hour later, so firing again would change the timestamp.
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == last_fired.state
 
 
 async def test_the_substitution_entity_fires_once_for_each_substitution(

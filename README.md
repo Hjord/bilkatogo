@@ -324,10 +324,6 @@ automation:
             of {{ trigger.to_state.attributes.ordered_quantity }} missing.
 ```
 
-The integration still fires the same data on the event bus as `bilkatogo_substitution` and
-`bilkatogo_missing_item`. These bus events are deprecated and will be removed in a later
-release; trigger on the event entities instead.
-
 ### Ready for pickup notification
 
 An automation that sends the Pickup Code once the order is packed. The entity IDs start with

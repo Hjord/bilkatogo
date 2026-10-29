@@ -69,29 +69,20 @@ async def test_each_missing_item_is_announced_once_from_received_to_picked_up(
     bilka: FakeBilka,
     freezer: FrozenDateTimeFactory,
 ) -> None:
-    events = async_capture_events(hass, "bilkatogo_missing_item")
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
     set_status(bilka, "Bestilt")
     entry = await setup_integration()
-    assert events == []
+    entity_id = event_entity_id(hass, entry, "missing_item")
+    assert fired(state_changes, entity_id) == []
 
     set_status(bilka, "Pakket")
     await next_update(hass, freezer)
-    assert [event.data for event in events] == [
-        {
-            "order_number": ORDER_NUMBER,
-            "product": "Skyr",
-            "article_number": "932058",
-            "ordered_quantity": 4,
-            "missing_quantity": 2,
-        },
-        {
-            "order_number": ORDER_NUMBER,
-            "product": "Havregryn",
-            "article_number": "1006",
-            "ordered_quantity": 1,
-            "missing_quantity": 1,
-        },
+    assert fired(state_changes, entity_id) == [
+        {"event_type": "missing_item", "order_number": ORDER_NUMBER, **item}
+        for item in MISSING_ITEMS
     ]
+    last_fired = hass.states.get(entity_id)
+    assert last_fired is not None
 
     await next_update(hass, freezer)
     assert await hass.config_entries.async_reload(entry.entry_id)
@@ -101,7 +92,10 @@ async def test_each_missing_item_is_announced_once_from_received_to_picked_up(
     set_status(bilka, "Faktureret")
     await next_update(hass, freezer)
     assert missing_items(hass, entry).state == "2"
-    assert len(events) == 2
+    # Each update is an hour later, so firing again would change the timestamp.
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == last_fired.state
 
 
 async def test_the_missing_item_entity_fires_for_missing_items_found_at_setup(
@@ -163,12 +157,15 @@ async def test_announced_missing_items_survive_a_restart(
         "key": f"bilkatogo.{config_entry.entry_id}.missing_items",
         "data": {"announced": [{"order_number": ORDER_NUMBER, "article_number": "932058"}]},
     }
-    events = async_capture_events(hass, "bilkatogo_missing_item")
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
     set_status(bilka, "Pakket")
 
-    await setup_integration()
+    entry = await setup_integration()
 
-    assert [event.data["product"] for event in events] == ["Havregryn"]
+    assert [
+        event["product"]
+        for event in fired(state_changes, event_entity_id(hass, entry, "missing_item"))
+    ] == ["Havregryn"]
 
 
 async def test_removing_the_entry_forgets_announced_missing_items(
