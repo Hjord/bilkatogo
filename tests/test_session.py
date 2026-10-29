@@ -113,6 +113,24 @@ async def test_ok_answer_with_an_error_body_counts_as_an_expired_session(
 
 
 @pytest.mark.asyncio
+async def test_an_error_body_after_a_fresh_login_raises_with_bilkas_message(
+    bilka: FakeBilka, storage: MemoryTokenStorage
+) -> None:
+    await log_in(bilka, storage)
+    logged_out = {"code": 1, "msg": "Du er ikke logget ind"}
+    bilka.script("order_history", logged_out, logged_out)
+
+    async with (
+        bilka.client() as http,
+        BilkaToGoClient(EMAIL, PASSWORD, token_storage=storage, httpx_client=http) as client,
+    ):
+        with pytest.raises(UnexpectedResponseError, match="Du er ikke logget ind"):
+            await client.get_orders()
+
+    assert len(bilka.calls("order_history")) == 2
+
+
+@pytest.mark.asyncio
 async def test_stored_session_about_to_expire_is_renewed_before_the_shop_call(
     bilka: FakeBilka, storage: MemoryTokenStorage
 ) -> None:

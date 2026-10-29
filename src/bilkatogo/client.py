@@ -1,7 +1,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 from types import TracebackType
-from typing import Any, Self
+from typing import Any, Self, TypeGuard
 from urllib.parse import urlencode
 
 import httpx
@@ -42,6 +42,16 @@ from .token_storage import TokenStorage
 
 def _order_number(order: str | Order) -> str:
     return order if isinstance(order, str) else order.order_number
+
+
+def _session_accepted(data: dict[str, Any] | None) -> TypeGuard[dict[str, Any]]:
+    """False for a 401 (`None`) or a 200 with Bilka's error body and a code, which Bilka
+    sends for an expired session (`{"code": 1, "msg": "Du er ikke logget ind"}`). An error
+    body with a null code is Bilka refusing the request itself, such as a Product that is not
+    available (`{"code": null, "msg": "Produktet … er desværre ikke aktuelt tilgængeligt"}`),
+    and goes back to the caller.
+    """
+    return data is not None and not (data.get("code") is not None and "msg" in data)
 
 
 class BilkaToGoClient:
@@ -174,7 +184,11 @@ class BilkaToGoClient:
         )
         messages = [
             message
-            for message in (answer.get("message"), answer.get("offerLimitMessage"))
+            for message in (
+                answer.get("message"),
+                answer.get("offerLimitMessage"),
+                answer.get("msg"),
+            )
             if message
         ]
         applied = answer.get("productAmount")
@@ -264,10 +278,11 @@ class BilkaToGoClient:
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()
         data = await self._shop_request(method, path, params, jwt)
-        if data is None:
+        if not _session_accepted(data):
             data = await self._shop_request(method, path, params, await self._login())
-        if data is None:
-            raise UnexpectedResponseError(f"{path} rejected a fresh session")
+        if not _session_accepted(data):
+            reason = f": {data['msg']}" if data and data.get("msg") else ""
+            raise UnexpectedResponseError(f"{path} rejected a fresh session{reason}")
         return data
 
     async def _shop_request(
@@ -283,10 +298,7 @@ class BilkaToGoClient:
             return None
         if response.status_code != 200:
             raise UnexpectedResponseError(f"{path} failed with HTTP {response.status_code}")
-        data = self._json(response, path)
-        if "code" in data and "msg" in data:
-            return None
-        return data
+        return self._json(response, path)
 
     async def _restore_session(self) -> str | None:
         if self._token_storage is None:
