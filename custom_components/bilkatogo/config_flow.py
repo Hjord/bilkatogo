@@ -12,6 +12,7 @@ from homeassistant.helpers.selector import (
 )
 
 from bilkatogo import (
+    REQUEST_TIMEOUT_SECONDS,
     BilkaToGoClient,
     BilkaToGoError,
     BilkaUnreachableError,
@@ -79,7 +80,11 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_try_login(self, email: str, password: str) -> dict[str, str]:
-        client = BilkaToGoClient(email, password, httpx_client=create_async_httpx_client(self.hass))
+        client = BilkaToGoClient(
+            email,
+            password,
+            httpx_client=create_async_httpx_client(self.hass, timeout=REQUEST_TIMEOUT_SECONDS),
+        )
         try:
             await client.login()
         except InvalidCredentialsError:

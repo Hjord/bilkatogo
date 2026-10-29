@@ -1,7 +1,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from .client import BilkaToGoClient
-from .const import CURRENT_ORDER_SCAN_LIMIT
+from .const import CURRENT_ORDER_SCAN_LIMIT, REQUEST_TIMEOUT_SECONDS
 from .exceptions import (
     BilkaToGoError,
     BilkaUnreachableError,
@@ -57,6 +57,7 @@ __all__ = [
     "PickupPoint",
     "PickupSlot",
     "Product",
+    "REQUEST_TIMEOUT_SECONDS",
     "Substitution",
     "TokenStorage",
     "UnexpectedResponseError",

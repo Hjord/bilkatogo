@@ -15,6 +15,8 @@ ORDER_HISTORY_PARAMS = {"muah": 1, "ordertype": "dibs,pgw"}
 CART_PARAMS = {"extra": "deliveryAddress,deliveryDate"}
 CART_COOKIE = "cart"
 CURRENT_ORDER_SCAN_LIMIT = 20
+# Order History can take well over httpx's default of 5 seconds to answer.
+REQUEST_TIMEOUT_SECONDS = 30.0
 BILKA_TIME_ZONE = ZoneInfo("Europe/Copenhagen")
 
 ALGOLIA_APP_ID = "F9VBJLR1BK"

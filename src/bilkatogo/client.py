@@ -23,6 +23,7 @@ from .const import (
     JWT_RENEWAL_MARGIN,
     ORDER_HISTORY_PAGE_SIZE,
     ORDER_HISTORY_PARAMS,
+    REQUEST_TIMEOUT_SECONDS,
     SEARCH_LIMIT,
     WEB_PARAMS,
 )
@@ -56,7 +57,7 @@ class BilkaToGoClient:
         self._password = password
         self._token_storage = token_storage
         self._owns_http = httpx_client is None
-        self._http = httpx_client or httpx.AsyncClient(timeout=httpx.Timeout(30.0))
+        self._http = httpx_client or httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS)
         self._jwt: str | None = None
         self._jwt_expires_at: datetime | None = None
 

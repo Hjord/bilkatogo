@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
+from bilkatogo import REQUEST_TIMEOUT_SECONDS
 from custom_components.bilkatogo.const import DOMAIN
 from tests.fake_bilka import FakeBilka, Scripted
 from tests.ha.conftest import SetupIntegration
@@ -34,6 +35,16 @@ def order_status(hass: HomeAssistant, entry: MockConfigEntry) -> str:
     state = hass.states.get(entity_id)
     assert state is not None
     return state.state
+
+
+async def test_requests_wait_for_a_slow_bilka(
+    setup_integration: SetupIntegration, bilka: FakeBilka
+) -> None:
+    await setup_integration()
+
+    assert bilka.requests
+    for request in bilka.requests:
+        assert request.extensions["timeout"]["read"] == REQUEST_TIMEOUT_SECONDS
 
 
 @pytest.mark.parametrize("failure", FAILURES.values(), ids=FAILURES.keys())
