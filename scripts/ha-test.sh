@@ -43,7 +43,7 @@ rsync -a --delete \
   "$repo/" "$cache/src/"
 cd "$cache/src"
 
-export UV_PROJECT_ENVIRONMENT="$cache/venv" UV_PYTHON=3.14
+export UV_PROJECT_ENVIRONMENT="$cache/venv" UV_PYTHON=3.14.9
 "$uv" sync -q --locked --no-default-groups --group ha
 "$uv" run --no-sync ty check custom_components tests/ha
 "$uv" run --no-sync mypy --strict --explicit-package-bases custom_components/bilkatogo

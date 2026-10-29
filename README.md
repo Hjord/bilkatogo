@@ -177,6 +177,8 @@ only serves Denmark.
 
 ### Installation
 
+The integration needs Home Assistant 2026.6 or later.
+
 1. Add the integration from the Home Assistant Marketplace (HACS) by searching for
    **BilkaToGo**, or add `https://github.com/nickknissen/bilkatogo` as a custom repository of
    type Integration. Restart Home Assistant afterwards.

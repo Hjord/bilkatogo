@@ -54,6 +54,8 @@ SEARCH_SCHEMA = vol.Schema(
         ),
     }
 )
+# Like the config flow's schemas, these stay on voluptuous for Home Assistant 2026.6; from
+# 2026.10 it is an alias of probatio, which is the only schema type Home Assistant names.
 
 
 def _entry(call: ServiceCall) -> BilkaToGoConfigEntry:
@@ -176,13 +178,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_ADD_TO_CART,
         _add_to_cart,
-        schema=ADD_TO_CART_SCHEMA,
+        schema=ADD_TO_CART_SCHEMA,  # type: ignore[arg-type]
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,
         SERVICE_SEARCH,
         _search,
-        schema=SEARCH_SCHEMA,
+        schema=SEARCH_SCHEMA,  # type: ignore[arg-type]
         supports_response=SupportsResponse.ONLY,
     )

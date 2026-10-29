@@ -33,6 +33,9 @@ USER_SCHEMA = vol.Schema(
     }
 )
 REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR})
+# Home Assistant 2026.10 replaced voluptuous with probatio and aliases `voluptuous` to it,
+# so these schemas work on 2026.6 and later. Its types only name probatio, hence the
+# ignores; switch to probatio once the minimum version is 2026.10.
 
 
 class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -53,7 +56,10 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
+            data_schema=self.add_suggested_values_to_schema(
+                USER_SCHEMA,  # type: ignore[arg-type]
+                user_input,
+            ),
             errors=errors,
         )
 
@@ -75,7 +81,7 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=REAUTH_SCHEMA,
+            data_schema=REAUTH_SCHEMA,  # type: ignore[arg-type]
             description_placeholders={"email": email},
             errors=errors,
         )
