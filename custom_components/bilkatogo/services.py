@@ -1,7 +1,7 @@
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-import voluptuous as vol
+import probatio
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import ATTR_CONFIG_ENTRY_ID
 from homeassistant.core import (
@@ -38,34 +38,34 @@ ATTR_LIMIT = "limit"
 
 DEFAULT_SEARCH_LIMIT = 10
 
-ADD_TO_CART_SCHEMA = vol.Schema(
+ADD_TO_CART_SCHEMA = probatio.Schema(
     {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_ARTICLE_NUMBER): cv.string,
-        vol.Optional(ATTR_QUANTITY, default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        probatio.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        probatio.Required(ATTR_ARTICLE_NUMBER): cv.string,
+        probatio.Optional(ATTR_QUANTITY, default=1): probatio.All(
+            probatio.Coerce(int), probatio.Range(min=1)
+        ),
     }
 )
 
 # Without a quantity, the whole Cart Line goes.
-REMOVE_FROM_CART_SCHEMA = vol.Schema(
+REMOVE_FROM_CART_SCHEMA = probatio.Schema(
     {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_ARTICLE_NUMBER): cv.string,
-        vol.Optional(ATTR_QUANTITY): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        probatio.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        probatio.Required(ATTR_ARTICLE_NUMBER): cv.string,
+        probatio.Optional(ATTR_QUANTITY): probatio.All(probatio.Coerce(int), probatio.Range(min=1)),
     }
 )
 
-SEARCH_SCHEMA = vol.Schema(
+SEARCH_SCHEMA = probatio.Schema(
     {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_QUERY): cv.string,
-        vol.Optional(ATTR_LIMIT, default=DEFAULT_SEARCH_LIMIT): vol.All(
-            vol.Coerce(int), vol.Range(min=1)
+        probatio.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        probatio.Required(ATTR_QUERY): cv.string,
+        probatio.Optional(ATTR_LIMIT, default=DEFAULT_SEARCH_LIMIT): probatio.All(
+            probatio.Coerce(int), probatio.Range(min=1)
         ),
     }
 )
-# Like the config flow's schemas, these stay on voluptuous for Home Assistant 2026.6; from
-# 2026.10 it is an alias of probatio, which is the only schema type Home Assistant names.
 
 
 def _entry(call: ServiceCall) -> BilkaToGoConfigEntry:
@@ -198,20 +198,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_ADD_TO_CART,
         _add_to_cart,
-        schema=ADD_TO_CART_SCHEMA,  # type: ignore[arg-type]
+        schema=ADD_TO_CART_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,
         SERVICE_REMOVE_FROM_CART,
         _remove_from_cart,
-        schema=REMOVE_FROM_CART_SCHEMA,  # type: ignore[arg-type]
+        schema=REMOVE_FROM_CART_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,
         SERVICE_SEARCH,
         _search,
-        schema=SEARCH_SCHEMA,  # type: ignore[arg-type]
+        schema=SEARCH_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
