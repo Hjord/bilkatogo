@@ -22,6 +22,14 @@ class NoPickupPointError(BilkaToGoError):
     """No Pickup Point was named and none is chosen in the Cart."""
 
 
+class OrderNotFoundError(BilkaToGoError):
+    """Bilka has no Order with the given Order Number on this account."""
+
+    def __init__(self, order_number: str) -> None:
+        super().__init__(f"Order {order_number} was not found")
+        self.order_number = order_number
+
+
 class CartChangeRejectedError(BilkaToGoError):
     """Bilka applied a different quantity than asked to a Cart Line; the message is Bilka's.
 

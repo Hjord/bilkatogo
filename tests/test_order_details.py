@@ -5,7 +5,13 @@ from decimal import Decimal
 
 import pytest
 
-from bilkatogo import BilkaToGoClient, BilkaToGoError, OrderDetails, OrderStatus
+from bilkatogo import (
+    BilkaToGoClient,
+    BilkaToGoError,
+    OrderDetails,
+    OrderNotFoundError,
+    OrderStatus,
+)
 from tests.fake_bilka import EMAIL, PASSWORD, FakeBilka
 
 
@@ -183,3 +189,16 @@ async def test_unknown_order_number_raises_bilka_to_go_error(
 
     with pytest.raises(BilkaToGoError):
         await fetch(bilka, "900000000099")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("answer", [{}, {"order": None}])
+async def test_an_answer_without_the_order_raises_order_not_found(
+    bilka: FakeBilka, answer: dict
+) -> None:
+    bilka.script("order_details", answer)
+
+    with pytest.raises(OrderNotFoundError) as caught:
+        await fetch(bilka, "900000000099")
+
+    assert caught.value.order_number == "900000000099"
