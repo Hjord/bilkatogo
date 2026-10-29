@@ -14,7 +14,9 @@ STORAGE_VERSION = 1
 def substitution_data(substitution: Substitution) -> dict[str, Any]:
     return {
         "original_product": substitution.original_product,
+        "original_article_number": substitution.original_article_number,
         "replacement_product": substitution.replacement_product,
+        "replacement_article_number": substitution.replacement_article_number,
         "quantity": substitution.quantity,
     }
 

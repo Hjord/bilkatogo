@@ -386,12 +386,14 @@ def test_order_json_output(invoke) -> None:
     assert details["pickup_code"] == {"code": "12345678"}
     assert details["substitutions"][0] == {
         "original_product": "Æbler",
+        "original_article_number": "1001",
         "replacement_product": "Pærer",
+        "replacement_article_number": "1002",
         "quantity": 4,
     }
     assert details["lines"][1] == {
         "category": "Frugt & grønt",
-        "product_id": 1003,
+        "article_number": "1003",
         "name": "Rugbrød",
         "quantity": 1,
         "amount": "25.00",

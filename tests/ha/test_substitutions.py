@@ -20,8 +20,20 @@ from tests.ha.conftest import SetupIntegration, event_entity_id, fired
 ORDER_NUMBER = "900000000001"
 
 SUBSTITUTIONS = [
-    {"original_product": "Æbler", "replacement_product": "Pærer", "quantity": 4},
-    {"original_product": "Letmælk", "replacement_product": "Minimælk", "quantity": 3},
+    {
+        "original_product": "Æbler",
+        "original_article_number": "1001",
+        "replacement_product": "Pærer",
+        "replacement_article_number": "1002",
+        "quantity": 4,
+    },
+    {
+        "original_product": "Letmælk",
+        "original_article_number": "1004",
+        "replacement_product": "Minimælk",
+        "replacement_article_number": "1005",
+        "quantity": 3,
+    },
 ]
 
 

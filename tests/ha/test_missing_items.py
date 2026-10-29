@@ -132,7 +132,17 @@ async def test_event_entities_are_translated_in_danish_and_english(
     assert en[f"{prefix}substitution.name"] == "Substitution"
     assert en[f"{prefix}missing_item.name"] == "Missing item"
     for key, attributes in (
-        ("substitution", ("order_number", "original_product", "replacement_product", "quantity")),
+        (
+            "substitution",
+            (
+                "order_number",
+                "original_product",
+                "original_article_number",
+                "replacement_product",
+                "replacement_article_number",
+                "quantity",
+            ),
+        ),
         ("missing_item", ("order_number", *MISSING_ITEMS[0])),
     ):
         for translations in (da, en):
