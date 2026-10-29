@@ -215,14 +215,52 @@ async def test_announced_substitutions_survive_a_restart(
     hass_storage[f"bilkatogo.{config_entry.entry_id}.substitutions"] = {
         "version": 1,
         "key": f"bilkatogo.{config_entry.entry_id}.substitutions",
-        "data": {"announced": [{"order_number": ORDER_NUMBER, "original_product": "Æbler"}]},
+        "data": {"announced": [{"order_number": ORDER_NUMBER, "original_article_number": "1001"}]},
     }
-    events = async_capture_events(hass, "bilkatogo_substitution")
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
     set_status(bilka, "Pakket")
 
-    await setup_integration()
+    entry = await setup_integration()
 
-    assert [event.data["original_product"] for event in events] == ["Letmælk"]
+    assert [
+        event["original_product"]
+        for event in fired(state_changes, event_entity_id(hass, entry, "substitution"))
+    ] == ["Letmælk"]
+
+
+async def test_substitutions_announced_by_name_are_not_announced_again(
+    hass: HomeAssistant,
+    setup_integration: SetupIntegration,
+    bilka: FakeBilka,
+    hass_storage: dict[str, Any],
+    config_entry: MockConfigEntry,
+) -> None:
+    """Up to 0.5.0, announced Substitutions were stored by the Original Product's name."""
+    key = f"bilkatogo.{config_entry.entry_id}.substitutions"
+    hass_storage[key] = {
+        "version": 1,
+        "key": key,
+        "data": {
+            "announced": [
+                {"order_number": ORDER_NUMBER, "original_product": "Æbler"},
+                {"order_number": "900000000002", "original_product": "Rugbrød"},
+            ]
+        },
+    }
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
+    set_status(bilka, "Pakket")
+
+    entry = await setup_integration()
+
+    assert [
+        event["original_product"]
+        for event in fired(state_changes, event_entity_id(hass, entry, "substitution"))
+    ] == ["Letmælk"]
+    assert hass_storage[key]["data"]["announced"] == [
+        {"order_number": ORDER_NUMBER, "original_article_number": "1001"},
+        {"order_number": ORDER_NUMBER, "original_article_number": "1004"},
+        {"order_number": "900000000002", "original_product": "Rugbrød"},
+    ]
 
 
 async def test_a_substitution_added_later_is_announced(
@@ -234,22 +272,28 @@ async def test_a_substitution_added_later_is_announced(
 ) -> None:
     set_status(bilka, "Pakket")
     entry = await setup_integration()
-    events = async_capture_events(hass, "bilkatogo_substitution")
+    state_changes = async_capture_events(hass, EVENT_STATE_CHANGED)
 
     details = bilka.details[ORDER_NUMBER]["order"]
     group = details["lines"][0]["lines"][0]
     substituted = next(line for line in group["orderlines"] if line.get("tagline") == "erstattet")
+    # Another Product with the same name as an already substituted one.
     extra = {
         **substituted,
-        "product": {**substituted["product"], "name": "Havregryn"},
-        "children": [{**substituted["children"][0], "product": {"name": "Mysli"}}],
+        "product": {**substituted["product"], "objectID": 1007},
+        "children": [
+            {**substituted["children"][0], "product": {"objectID": 1008, "name": "Mysli"}}
+        ],
     }
     group["orderlines"] = [*group["orderlines"], extra]
     await next_update(hass, freezer)
 
-    assert [event.data["original_product"] for event in events] == ["Havregryn"]
+    assert [
+        (event["original_product"], event["original_article_number"])
+        for event in fired(state_changes, event_entity_id(hass, entry, "substitution"))
+    ] == [("Æbler", "1007")]
     announced = hass_storage[f"bilkatogo.{entry.entry_id}.substitutions"]["data"]["announced"]
-    assert {"order_number": ORDER_NUMBER, "original_product": "Havregryn"} in announced
+    assert {"order_number": ORDER_NUMBER, "original_article_number": "1007"} in announced
 
 
 async def test_a_new_current_order_drops_the_previous_substitutions(
