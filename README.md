@@ -65,12 +65,15 @@ asyncio.run(main())
   is kept in `status_code`. The mapping is listed in [GLOSSARY.md](GLOSSARY.md).
 - `Product.article_number` from `search()` is Bilka's `objectID`, the same Article Number that
   Order Lines and Missing Items carry.
-- `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in Europe/Copenhagen.
+- `Order.ordered_at`, `PickupSlot.starts_at` and `ends_at` are timezone-aware datetimes in
+  Europe/Copenhagen.
 - Amounts are `Decimal` kroner.
 - `OrderDetails.order_total` is the Order Total, broken down into `deposit`, `service_fee`,
   `packaging`, `delivery_fee` and `discount`. `ordered_total` is what the Order cost when it was
   placed, looked up in the order history (`None` when it is not among the latest 20 Orders).
-  Pass an `Order` to `get_order` instead of its number to skip that lookup.
+  Pass an `Order` to `get_order` instead of its number to skip that lookup. An `Order` from
+  `get_orders()` has the same `ordered_total` and `order_total`, the latter Bilka's estimate
+  until the Order is Packed.
 - `get_cart()` returns your `Cart`: its `lines` (each a `CartLine` with `product`,
   `article_number`, `quantity`, `price` and `line_total`, with any Multibuy Offer already
   applied in the line total), the Cart `total` broken down into `deposit`, `service_fee`,

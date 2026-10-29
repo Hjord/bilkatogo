@@ -174,7 +174,7 @@ def test_orders_json_output(invoke) -> None:
         "order_number": "900000000002",
         "status": "received",
         "status_code": "Bestilt",
-        "ordered_at": "2026-11-01T20:15:00",
+        "ordered_at": "2026-11-01T20:15:00+01:00",
         "pickup_slot": {"date": "2026-11-03", "start": "16:00:00", "end": "18:00:00"},
         "pickup_point": {
             "name": "Bilka Eksempelby",
@@ -185,8 +185,8 @@ def test_orders_json_output(invoke) -> None:
         },
         "home_delivery": False,
         "delivered": False,
-        "ordered_price": "456.00",
-        "packed_price": "0.00",
+        "ordered_total": "456.00",
+        "order_total": "0.00",
         "content": "Æbler, Havregryn, Letmælk",
     }
     assert collected["status"] == "picked_up"

@@ -126,7 +126,7 @@ class BilkaToGoClient:
             raise BilkaToGoError(f"Order {order_number} was not found")
         summary = await self._find_order(order_number) if isinstance(order, str) else order
         return OrderDetails.from_dict(
-            details, ordered_total=summary.ordered_price if summary else None
+            details, ordered_total=summary.ordered_total if summary else None
         )
 
     async def get_current_order(self) -> OrderDetails | None:

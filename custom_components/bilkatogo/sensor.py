@@ -37,7 +37,7 @@ def _slot_time(order: Order | None, *, start: bool) -> datetime | None:
 
 
 def _order_price(order: Order) -> Decimal:
-    return order.packed_price or order.ordered_price
+    return order.order_total or order.ordered_total
 
 
 def _status_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
@@ -67,8 +67,8 @@ def _order_total_attributes(data: BilkaToGoData) -> dict[str, Any] | None:
     if order is None or total is None:
         return None
     attributes = {
-        "ordered_total": float(order.ordered_price),
-        "difference": float(total - order.ordered_price),
+        "ordered_total": float(order.ordered_total),
+        "difference": float(total - order.ordered_total),
     }
     if details:
         attributes |= {
