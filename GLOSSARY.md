@@ -101,7 +101,7 @@ Note that Bilka says "Modtaget" (received) for the code `Bestilt` (ordered); the
 ### Substitutions
 
 **Substitution**:
-An Order Line Bilka could not fulfil and replaced with a different product, shown on the website as "erstattet". It pairs the Original Product with its Replacement Product.
+An Order Line Bilka could not fulfil and replaced with a different product, shown on the website as "erstattet". It pairs the Original Product and the quantity ordered with its Replacement Product and the quantity packed, e.g. 2 Letmælk replaced by 3 Minimælk.
 _Avoid_: Replacement (on its own), swap, erstatningsvare (use only as the Danish alias)
 
 **Original Product**:

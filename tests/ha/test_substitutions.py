@@ -23,6 +23,7 @@ SUBSTITUTIONS = [
     {
         "original_product": "Æbler",
         "original_article_number": "1001",
+        "ordered_quantity": 4,
         "replacement_product": "Pærer",
         "replacement_article_number": "1002",
         "quantity": 4,
@@ -30,6 +31,7 @@ SUBSTITUTIONS = [
     {
         "original_product": "Letmælk",
         "original_article_number": "1004",
+        "ordered_quantity": 2,
         "replacement_product": "Minimælk",
         "replacement_article_number": "1005",
         "quantity": 3,

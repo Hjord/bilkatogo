@@ -307,7 +307,7 @@ async def order(
     print_list(
         "Substitutions",
         [
-            f"{substitution.original_product} -> "
+            f"{substitution.ordered_quantity} x {substitution.original_product} -> "
             f"{substitution.quantity} x {substitution.replacement_product}"
             for substitution in details.substitutions
         ],

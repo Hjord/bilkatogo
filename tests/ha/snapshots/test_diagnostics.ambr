@@ -8,6 +8,7 @@
         'substitution': list([
           dict({
             'order_number': '900000000001',
+            'ordered_quantity': 4,
             'original_article_number': '1001',
             'original_product': 'Æbler',
             'quantity': 4,
@@ -16,6 +17,7 @@
           }),
           dict({
             'order_number': '900000000001',
+            'ordered_quantity': 2,
             'original_article_number': '1004',
             'original_product': 'Letmælk',
             'quantity': 3,
@@ -311,6 +313,7 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
+            'ordered_quantity': 4,
             'original_article_number': '1001',
             'original_product': 'Æbler',
             'quantity': 4,
@@ -340,6 +343,7 @@
               'tagline': 'erstattet',
               'unavailable_reason': '',
             }),
+            'ordered_quantity': 2,
             'original_article_number': '1004',
             'original_product': 'Letmælk',
             'quantity': 3,
