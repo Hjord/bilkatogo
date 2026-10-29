@@ -197,15 +197,21 @@ class BilkaToGoClient:
         return cart
 
     async def add_to_cart(self, article_number: str, quantity: int = 1) -> Cart:
-        current = sum(
+        current = await self._cart_quantity(article_number)
+        return await self.set_cart_quantity(article_number, current + quantity)
+
+    async def remove_from_cart(self, article_number: str, quantity: int | None = None) -> Cart:
+        if quantity is None:
+            return await self.set_cart_quantity(article_number, 0)
+        current = await self._cart_quantity(article_number)
+        return await self.set_cart_quantity(article_number, max(current - quantity, 0))
+
+    async def _cart_quantity(self, article_number: str) -> int:
+        return sum(
             line.quantity
             for line in (await self.get_cart()).lines
             if line.article_number == article_number
         )
-        return await self.set_cart_quantity(article_number, current + quantity)
-
-    async def remove_from_cart(self, article_number: str) -> Cart:
-        return await self.set_cart_quantity(article_number, 0)
 
     async def clear_cart(self) -> Cart:
         await self._shop("GET", "shop/v6/EmptyCart", CART_PARAMS)

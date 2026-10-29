@@ -673,6 +673,18 @@ def test_cart_remove_drops_the_cart_line(invoke, logged_in_cart: FakeBilka) -> N
     assert "Bananer" in result.output
 
 
+def test_cart_remove_with_a_quantity_takes_it_off_the_cart_line(
+    invoke, logged_in_cart: FakeBilka
+) -> None:
+    result = invoke(
+        "cart", "remove", "18381", "--quantity", "3", "--email", EMAIL, "--password", PASSWORD
+    )
+
+    assert result.exit_code == 0, result.output
+    bananas = next(row for row in result.output.splitlines() if "Bananer" in row)
+    assert bananas.split()[2] == "7"
+
+
 def test_cart_change_prints_bilkas_warning_and_succeeds(invoke, logged_in_cart: FakeBilka) -> None:
     logged_in_cart.change_answer = load_fixture("change_line_count_warning.json")
 

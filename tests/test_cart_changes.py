@@ -139,6 +139,28 @@ async def test_remove_from_cart_sets_the_quantity_to_zero_and_drops_the_cart_lin
 
 
 @pytest.mark.asyncio
+async def test_remove_from_cart_takes_a_quantity_off_the_cart_line(
+    logged_in_cart: FakeBilka,
+) -> None:
+    cart = await change(logged_in_cart, lambda client: client.remove_from_cart("18381", quantity=3))
+
+    [request] = logged_in_cart.calls("change_line_count")
+    assert request.url.params["count"] == "7"
+    assert quantities(cart)["18381"] == 7
+
+
+@pytest.mark.asyncio
+async def test_removing_more_than_the_cart_line_holds_drops_it(
+    logged_in_cart: FakeBilka,
+) -> None:
+    cart = await change(logged_in_cart, lambda client: client.remove_from_cart("18364", quantity=5))
+
+    [request] = logged_in_cart.calls("change_line_count")
+    assert request.url.params["count"] == "0"
+    assert "18364" not in quantities(cart)
+
+
+@pytest.mark.asyncio
 async def test_clear_cart_empties_the_cart_and_keeps_the_pickup_point(
     logged_in_cart: FakeBilka,
 ) -> None:

@@ -220,6 +220,24 @@
         }
       }
     },
+    "remove_from_cart": {
+      "name": "Fjern fra kurv",
+      "description": "Fjerner en vare, eller noget af den, fra din BilkaToGo-kurv.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "BilkaToGo-kontoen, der skal bruges. Kun nødvendig, hvis der er tilføjet mere end én."
+        },
+        "article_number": {
+          "name": "Varenummer",
+          "description": "Bilkas varenummer på varen, som søgehandlingen returnerer det."
+        },
+        "quantity": {
+          "name": "Antal",
+          "description": "Hvor mange der skal fjernes. Udelad det for at fjerne varen helt."
+        }
+      }
+    },
     "search": {
       "name": "Søg efter varer",
       "description": "Søger efter varer i den butik, der betjener din kurvs afhentningssted, med pris, lagerstatus og tilbud.",

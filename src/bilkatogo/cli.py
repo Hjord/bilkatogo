@@ -517,13 +517,21 @@ async def cart_set(
 async def cart_remove(
     ctx: typer.Context,
     article_number: ArticleArgument,
+    quantity: Annotated[
+        int | None,
+        typer.Option("--quantity", min=1, help="How many to remove; leave out to remove them all."),
+    ] = None,
     email: EmailOption = None,
     password: PasswordOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Remove a Product from your Cart."""
+    """Remove a Product, or some of it, from your Cart."""
     await change_cart(
-        ctx, email, password, as_json, lambda client: client.remove_from_cart(article_number)
+        ctx,
+        email,
+        password,
+        as_json,
+        lambda client: client.remove_from_cart(article_number, quantity),
     )
 
 
