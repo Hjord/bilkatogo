@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-import voluptuous as vol
+import probatio
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers.httpx_client import create_async_httpx_client
@@ -24,18 +24,15 @@ from .const import DOMAIN, LOGGER
 PASSWORD_SELECTOR = TextSelector(
     TextSelectorConfig(type=TextSelectorType.PASSWORD, autocomplete="current-password")
 )
-USER_SCHEMA = vol.Schema(
+USER_SCHEMA = probatio.Schema(
     {
-        vol.Required(CONF_EMAIL): TextSelector(
+        probatio.Required(CONF_EMAIL): TextSelector(
             TextSelectorConfig(type=TextSelectorType.EMAIL, autocomplete="username")
         ),
-        vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR,
+        probatio.Required(CONF_PASSWORD): PASSWORD_SELECTOR,
     }
 )
-REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR})
-# Home Assistant 2026.10 replaced voluptuous with probatio and aliases `voluptuous` to it,
-# so these schemas work on 2026.6 and later. Its types only name probatio, hence the
-# ignores; switch to probatio once the minimum version is 2026.10.
+REAUTH_SCHEMA = probatio.Schema({probatio.Required(CONF_PASSWORD): PASSWORD_SELECTOR})
 
 
 class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -56,10 +53,7 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(
-                USER_SCHEMA,  # type: ignore[arg-type]
-                user_input,
-            ),
+            data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
             errors=errors,
         )
 
@@ -81,7 +75,7 @@ class BilkaToGoConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=REAUTH_SCHEMA,  # type: ignore[arg-type]
+            data_schema=REAUTH_SCHEMA,
             description_placeholders={"email": email},
             errors=errors,
         )

@@ -50,8 +50,8 @@ jobs:
         with:
           python-version: "3.14.9"
       - run: uv venv
-      # Home Assistant 2026.6.4
-      - run: uv pip install -e . pytest-homeassistant-custom-component==0.13.340
+      # Home Assistant 2026.10.0
+      - run: uv pip install -e . pytest-homeassistant-custom-component==0.13.371
       - run: .venv/bin/pytest tests/ha
 
   hassfest:

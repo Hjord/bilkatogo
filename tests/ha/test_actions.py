@@ -1,8 +1,8 @@
 from typing import Any
 
 import httpx
+import probatio
 import pytest
-import voluptuous as vol
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
@@ -98,7 +98,7 @@ async def test_quantity_must_be_at_least_one(
 ) -> None:
     await setup_integration()
 
-    with pytest.raises(vol.Invalid):
+    with pytest.raises(probatio.Invalid):
         await call(hass, action, {"article_number": "18381", "quantity": 0})
 
     assert cart.calls("change_line_count") == []
