@@ -44,14 +44,21 @@ def _order_number(order: str | Order) -> str:
     return order if isinstance(order, str) else order.order_number
 
 
-def _logged_out(data: dict[str, Any]) -> bool:
-    """Bilka's error body for an expired session: `{"code": 1, "msg": "Du er ikke logget ind"}`.
+def _is_error_body(data: dict[str, Any]) -> bool:
+    return "code" in data and "msg" in data
 
-    A body with a null code is not one: that is Bilka refusing the request itself, such as an
-    unavailable Product (`{"code": null, "msg": "Produktet … ikke aktuelt tilgængeligt"}`),
-    and it goes back to the caller.
-    """
-    return data.get("code") is not None and "msg" in data
+
+def _is_session_expired(data: dict[str, Any]) -> bool:
+    """Bilka's error body for an expired session: `{"code": 1, "msg": "Du er ikke logget ind"}`."""
+    return data.get("code") == 1
+
+
+class _ShopRefusedError(UnexpectedResponseError):
+    """Bilka answered a shop call with an error body other than an expired session."""
+
+    def __init__(self, path: str, reason: str) -> None:
+        super().__init__(f"{path}: {reason}")
+        self.reason = reason
 
 
 class BilkaToGoClient:
@@ -177,18 +184,19 @@ class BilkaToGoClient:
         return await self._shop("GET", "shop/v6/Cart", CART_PARAMS)
 
     async def set_cart_quantity(self, article_number: str, quantity: int) -> Cart:
-        answer = await self._shop(
-            "GET",
-            "shop/v6/ChangeLineCount",
-            {"productId": article_number, "count": quantity, "fullCart": 0},
-        )
+        try:
+            answer = await self._shop(
+                "GET",
+                "shop/v6/ChangeLineCount",
+                {"productId": article_number, "count": quantity, "fullCart": 0},
+            )
+        except _ShopRefusedError as refused:
+            raise CartChangeRejectedError(
+                refused.reason, article_number, quantity, None
+            ) from refused
         messages = [
             message
-            for message in (
-                answer.get("message"),
-                answer.get("offerLimitMessage"),
-                answer.get("msg"),
-            )
+            for message in (answer.get("message"), answer.get("offerLimitMessage"))
             if message
         ]
         applied = answer.get("productAmount")
@@ -278,11 +286,13 @@ class BilkaToGoClient:
     async def _shop(self, method: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
         jwt = self._valid_jwt() or await self._restore_session() or await self._login()
         data = await self._shop_request(method, path, params, jwt)
-        if data is None or _logged_out(data):
+        if data is None or _is_session_expired(data):
             data = await self._shop_request(method, path, params, await self._login())
-        if data is None or _logged_out(data):
-            reason = f": {data['msg']}" if data else ""
+        if data is None or _is_session_expired(data):
+            reason = f": {data['msg']}" if data is not None else ""
             raise UnexpectedResponseError(f"{path} rejected a fresh session{reason}")
+        if _is_error_body(data):
+            raise _ShopRefusedError(path, data["msg"])
         return data
 
     async def _shop_request(
